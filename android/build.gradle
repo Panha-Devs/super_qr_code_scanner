@@ -8,7 +8,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.0'
+        classpath 'com.android.tools.build:gradle:8.9.1'
     }
 }
 
@@ -16,65 +16,37 @@ rootProject.allprojects {
     repositories {
         google()
         mavenCentral()
-        maven {
-            url "https://maven.google.com"
-        }
     }
 }
 
 apply plugin: 'com.android.library'
 
 android {
-    namespace "com.example.super_qr_code_scanner"
-    compileSdkVersion 33
-
-    defaultConfig {
-        minSdkVersion 21
-        
-        externalNativeBuild {
-            cmake {
-                arguments "-DANDROID_STL=c++_shared",
-                          "-DOpenCV_DIR=${buildDir}/opencv_sdk/sdk/native/jni"
-                cppFlags "-std=c++17"
-            }
-        }
-        
-        ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
-        }
+    // Conditional for compatibility with AGP <4.2.
+    if (project.android.hasProperty("namespace")) {
+        namespace 'com.example.super_qr_code_scanner'
     }
+
+    compileSdk 36
+    ndkVersion "28.2.13676358"
 
     externalNativeBuild {
         cmake {
-            path "CMakeLists.txt"
+            path "../src/CMakeLists.txt"
         }
     }
 
-    sourceSets {
-        main {
-            jniLibs.srcDirs = ['src/main/jniLibs']
-        }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
-    
-    // Task to extract OpenCV AAR for CMake
-    tasks.register('extractOpenCV', Copy) {
-        def aar = configurations.detachedConfiguration(
-            dependencies.create('org.opencv:opencv:4.5.3')
-        ).singleFile
-        from(zipTree(aar)) {
-            include 'jni/**'
-        }
-        into "${buildDir}/opencv_sdk"
-        rename('jni', 'native/jni')
-    }
-    
-    // Extract OpenCV before CMake configuration
-    tasks.named('preBuild') {
-        dependsOn 'extractOpenCV'
-    }
-}
 
-dependencies {
-    // OpenCV from Maven
-    implementation 'org.opencv:opencv:4.5.3'
+    defaultConfig {
+        minSdkVersion 24
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+            }
+        }
+    }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:super_qr_code_scanner/super_qr_code_scanner.dart';
+import 'package:image_picker/image_picker.dart';
 
 void main() {
   // Enable logging for debugging
@@ -34,6 +35,7 @@ class QRScannerDemo extends StatefulWidget {
 
 class _QRScannerDemoState extends State<QRScannerDemo> {
   final scanner = SuperQRCodeScanner();
+  final imagePicker = ImagePicker();
   List<QRCode> results = [];
   bool isScanning = false;
   String? errorMessage;
@@ -65,7 +67,15 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
     _showSnackBar('Configuration changed to $config');
   }
 
-  Future<void> _scanSampleImage() async {
+  Future<void> _scanFromGallery() async {
+    await _scanImage(ImageSource.gallery);
+  }
+
+  Future<void> _scanFromCamera() async {
+    await _scanImage(ImageSource.camera);
+  }
+
+  Future<void> _scanImage(ImageSource source) async {
     setState(() {
       isScanning = true;
       errorMessage = null;
@@ -73,19 +83,24 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
     });
 
     try {
-      // In a real app, you would get the image path from:
-      // - Image picker (gallery/camera)
-      // - File picker
-      // - Assets
-      // - Network download
-      // - etc.
-      
-      // For this example, we'll show how to use the API
-      const sampleImagePath = '/path/to/your/qr/code/image.jpg';
+      // Pick image from gallery or camera
+      final XFile? pickedFile = await imagePicker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1920,
+      );
+
+      if (pickedFile == null) {
+        setState(() {
+          isScanning = false;
+        });
+        _showSnackBar('No image selected');
+        return;
+      }
       
       // Run scan in background to avoid blocking UI
       final qrCodes = await Future.microtask(
-        () => scanner.scanImageFile(sampleImagePath),
+        () => scanner.scanImageFile(pickedFile.path),
       );
 
       setState(() {
@@ -134,9 +149,10 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             // Configuration selector
             Card(
               child: Padding(
@@ -181,60 +197,39 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
             ),
             const SizedBox(height: 16),
 
-            // Scan button
-            ElevatedButton.icon(
-              onPressed: isScanning ? null : _scanSampleImage,
-              icon: isScanning
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.qr_code_scanner),
-              label: Text(isScanning ? 'Scanning...' : 'Scan QR Code'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(16),
-              ),
+            // Scan buttons
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: isScanning ? null : _scanFromGallery,
+                    icon: isScanning
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.photo_library),
+                    label: const Text('Gallery'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: isScanning ? null : _scanFromCamera,
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Camera'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
-
-            // Usage information
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.blue),
-                        SizedBox(width: 8),
-                        Text(
-                          'How to use',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      '1. Get an image with QR codes using:\n'
-                      '   • Image picker (camera/gallery)\n'
-                      '   • File picker\n'
-                      '   • Network download\n'
-                      '   • App assets\n\n'
-                      '2. Call scanner.scanImageFile(path)\n\n'
-                      '3. Process the results',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
             // Results section
             if (results.isNotEmpty) ...[
               const Text(
@@ -245,7 +240,8 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
                 ),
               ),
               const SizedBox(height: 8),
-              Expanded(
+              SizedBox(
+                height: 300,
                 child: ListView.builder(
                   itemCount: results.length,
                   itemBuilder: (context, index) {
@@ -293,7 +289,8 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
                 ),
               )
             else
-              const Expanded(
+              const SizedBox(
+                height: 200,
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -323,7 +320,44 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
                   ),
                 ),
               ),
-          ],
+            const SizedBox(height: 24),
+            // Usage information
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Text(
+                          'How to use',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      '1. Tap "Gallery" to select an image\n'
+                      '   or "Camera" to take a photo\n\n'
+                      '2. The app will scan for QR codes\n\n'
+                      '3. Results will appear below\n\n'
+                      'Tip: Try different configurations\n'
+                      'for varying quality images',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            ],
+          ),
         ),
       ),
     );
