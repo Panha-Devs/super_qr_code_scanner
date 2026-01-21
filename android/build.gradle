@@ -1,0 +1,62 @@
+group 'com.example.super_qr_code_scanner'
+version '1.0.0'
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.3.0'
+    }
+}
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url "https://maven.google.com"
+        }
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    namespace "com.example.super_qr_code_scanner"
+    compileSdkVersion 33
+
+    defaultConfig {
+        minSdkVersion 21
+        
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared"
+                cppFlags "-std=c++17"
+            }
+        }
+        
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/jniLibs']
+        }
+    }
+}
+
+dependencies {
+    // OpenCV from Maven
+    implementation 'org.opencv:opencv:4.5.3'
+}
