@@ -4,6 +4,8 @@
 #include <vector>
 #include <set>
 #include <cstring>
+#include <future>
+#include <thread>
 
 // Disable OpenCV plugin loading to avoid APK directory access issues on Android
 static struct OpenCVInitializer {
@@ -75,76 +77,88 @@ static std::vector<ZXing::Barcode> scanQRCodesInternal(const cv::Mat& image) {
 }
 
 QRScanResult* qr_scan_image(const char* image_path) {
-    cv::Mat image = cv::imread(image_path);
-    if (image.empty()) {
-        return nullptr;
-    }
-    
-    auto results = scanQRCodesInternal(image);
-    
-    QRScanResult* scanResult = new QRScanResult();
-    scanResult->count = results.size();
-    
-    if (scanResult->count > 0) {
-        scanResult->results = new QRCodeResult[scanResult->count];
-        
-        for (int i = 0; i < scanResult->count; i++) {
-            const auto& result = results[i];
-            
-            // Copy content
-            const std::string& text = result.text();
-            scanResult->results[i].content = new char[text.length() + 1];
-            strcpy(scanResult->results[i].content, text.c_str());
-            
-            // Copy format
-            std::string format = ToString(result.format());
-            scanResult->results[i].format = new char[format.length() + 1];
-            strcpy(scanResult->results[i].format, format.c_str());
+    // Run image loading and scanning in a worker thread
+    auto future = std::async(std::launch::async, [image_path]() -> QRScanResult* {
+        cv::Mat image = cv::imread(image_path);
+        if (image.empty()) {
+            return nullptr;
         }
-    } else {
-        scanResult->results = nullptr;
-    }
+        
+        auto results = scanQRCodesInternal(image);
+        
+        QRScanResult* scanResult = new QRScanResult();
+        scanResult->count = results.size();
+        
+        if (scanResult->count > 0) {
+            scanResult->results = new QRCodeResult[scanResult->count];
+            
+            for (int i = 0; i < scanResult->count; i++) {
+                const auto& result = results[i];
+                
+                // Copy content
+                const std::string& text = result.text();
+                scanResult->results[i].content = new char[text.length() + 1];
+                strcpy(scanResult->results[i].content, text.c_str());
+                
+                // Copy format
+                std::string format = ToString(result.format());
+                scanResult->results[i].format = new char[format.length() + 1];
+                strcpy(scanResult->results[i].format, format.c_str());
+            }
+        } else {
+            scanResult->results = nullptr;
+        }
+        
+        return scanResult;
+    });
     
-    return scanResult;
+    // Wait for the async task to complete and return the result
+    return future.get();
 }
 
 QRScanResult* qr_scan_bytes(const unsigned char* image_data, int width, int height, int channels) {
-    cv::Mat image;
-    
-    if (channels == 1) {
-        image = cv::Mat(height, width, CV_8UC1, (void*)image_data).clone();
-    } else if (channels == 3) {
-        image = cv::Mat(height, width, CV_8UC3, (void*)image_data).clone();
-    } else if (channels == 4) {
-        image = cv::Mat(height, width, CV_8UC4, (void*)image_data).clone();
-    } else {
-        return nullptr;
-    }
-    
-    auto results = scanQRCodesInternal(image);
-    
-    QRScanResult* scanResult = new QRScanResult();
-    scanResult->count = results.size();
-    
-    if (scanResult->count > 0) {
-        scanResult->results = new QRCodeResult[scanResult->count];
+    // Run image processing and scanning in a worker thread
+    auto future = std::async(std::launch::async, [image_data, width, height, channels]() -> QRScanResult* {
+        cv::Mat image;
         
-        for (int i = 0; i < scanResult->count; i++) {
-            const auto& result = results[i];
-            
-            const std::string& text = result.text();
-            scanResult->results[i].content = new char[text.length() + 1];
-            strcpy(scanResult->results[i].content, text.c_str());
-            
-            std::string format = ToString(result.format());
-            scanResult->results[i].format = new char[format.length() + 1];
-            strcpy(scanResult->results[i].format, format.c_str());
+        if (channels == 1) {
+            image = cv::Mat(height, width, CV_8UC1, (void*)image_data).clone();
+        } else if (channels == 3) {
+            image = cv::Mat(height, width, CV_8UC3, (void*)image_data).clone();
+        } else if (channels == 4) {
+            image = cv::Mat(height, width, CV_8UC4, (void*)image_data).clone();
+        } else {
+            return nullptr;
         }
-    } else {
-        scanResult->results = nullptr;
-    }
+        
+        auto results = scanQRCodesInternal(image);
+        
+        QRScanResult* scanResult = new QRScanResult();
+        scanResult->count = results.size();
+        
+        if (scanResult->count > 0) {
+            scanResult->results = new QRCodeResult[scanResult->count];
+            
+            for (int i = 0; i < scanResult->count; i++) {
+                const auto& result = results[i];
+                
+                const std::string& text = result.text();
+                scanResult->results[i].content = new char[text.length() + 1];
+                strcpy(scanResult->results[i].content, text.c_str());
+                
+                std::string format = ToString(result.format());
+                scanResult->results[i].format = new char[format.length() + 1];
+                strcpy(scanResult->results[i].format, format.c_str());
+            }
+        } else {
+            scanResult->results = nullptr;
+        }
+        
+        return scanResult;
+    });
     
-    return scanResult;
+    // Wait for the async task to complete and return the result
+    return future.get();
 }
 
 void qr_free_result(QRScanResult* result) {
