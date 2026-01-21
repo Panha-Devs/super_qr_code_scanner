@@ -1,4 +1,5 @@
 import 'dart:ffi' as ffi;
+import 'package:flutter/foundation.dart';
 import 'package:ffi/ffi.dart';
 
 import 'src/models.dart';
@@ -18,19 +19,9 @@ class SuperQRCodeScanner {
   static final SuperQRCodeScanner _instance = SuperQRCodeScanner._internal();
   factory SuperQRCodeScanner() => _instance;
 
-  late final QRScannerBindings _bindings;
   QRScannerConfig _config = QRScannerConfig.defaultConfig;
 
-  SuperQRCodeScanner._internal() {
-    try {
-      QRScannerLogger.info('Initializing QR Scanner Native');
-      _bindings = QRScannerBindings.load();
-      QRScannerLogger.info('QR Scanner Native initialized successfully');
-    } catch (e, stackTrace) {
-      QRScannerLogger.error('Failed to initialize QR Scanner', e, stackTrace);
-      rethrow;
-    }
-  }
+  SuperQRCodeScanner._internal();
 
   /// Get the current configuration
   QRScannerConfig get config => _config;
@@ -43,34 +34,26 @@ class SuperQRCodeScanner {
   }
 
   /// Scan QR codes from an image file path
-  /// 
+  ///
   /// Throws [InvalidParameterException] if the image path is invalid
   /// Throws [ImageProcessingException] if the image cannot be processed
   /// Returns an empty list if no QR codes are found
-  List<QRCode> scanImageFile(String imagePath) {
+  Future<List<QRCode>> scanImageFile(String imagePath) async {
     final stopwatch = Stopwatch()..start();
     QRScannerLogger.info('Scanning image file: $imagePath');
 
     try {
       // Validate input
-      QRScannerValidator.validateImagePath(imagePath);
+      await QRScannerValidator.validateImagePath(imagePath);
 
-      // Perform scan
-      final resultPtr = _bindings.scanImageFile(imagePath);
-      
-      if (resultPtr == ffi.nullptr) {
-        QRScannerLogger.info('No QR codes found in image');
-        return [];
-      }
+      // Run in separate isolate to prevent UI freeze
+      final results = await compute(_scanImageFileSync, imagePath);
 
-      // Parse results
-      final results = _parseResults(resultPtr);
-      
       stopwatch.stop();
       QRScannerLogger.info(
         'Found ${results.length} QR code(s) in ${stopwatch.elapsedMilliseconds}ms',
       );
-      
+
       return results;
     } on QRScannerException {
       rethrow;
@@ -84,24 +67,37 @@ class SuperQRCodeScanner {
     }
   }
 
+  /// Synchronous scan for use in compute isolate
+  static List<QRCode> _scanImageFileSync(String imagePath) {
+    final bindings = QRScannerBindings.load();
+    final resultPtr = bindings.scanImageFile(imagePath);
+
+    if (resultPtr == ffi.nullptr) {
+      return [];
+    }
+
+    return _parseResultsSync(bindings, resultPtr);
+  }
+
   /// Scan QR codes from raw image bytes
-  /// 
+  ///
   /// [imageData] - Raw pixel data (grayscale, RGB, or RGBA)
   /// [width] - Image width in pixels
   /// [height] - Image height in pixels
   /// [channels] - Number of channels (1=grayscale, 3=RGB, 4=RGBA)
-  /// 
+  ///
   /// Throws [InvalidParameterException] if parameters are invalid
   /// Throws [ImageProcessingException] if the image cannot be processed
   /// Returns an empty list if no QR codes are found
-  List<QRCode> scanImageBytes(
+  Future<List<QRCode>> scanImageBytes(
     List<int> imageData,
     int width,
     int height,
     int channels,
-  ) {
+  ) async {
     final stopwatch = Stopwatch()..start();
-    QRScannerLogger.info('Scanning image bytes: ${width}x$height, $channels channels');
+    QRScannerLogger.info(
+        'Scanning image bytes: ${width}x$height, $channels channels');
 
     try {
       // Validate input
@@ -112,35 +108,16 @@ class SuperQRCodeScanner {
         channels: channels,
       );
 
-      // Allocate native memory
-      final dataPtr = malloc<ffi.Uint8>(imageData.length);
-      
-      try {
-        // Copy data to native memory
-        final dataList = dataPtr.asTypedList(imageData.length);
-        dataList.setAll(0, imageData);
+      // Run in separate isolate to prevent UI freeze
+      final params = _ScanBytesParams(imageData, width, height, channels);
+      final results = await compute(_scanImageBytesSync, params);
 
-        // Perform scan
-        final resultPtr = _bindings.scanImageBytes(dataPtr, width, height, channels);
-        
-        if (resultPtr == ffi.nullptr) {
-          QRScannerLogger.info('No QR codes found in image bytes');
-          return [];
-        }
+      stopwatch.stop();
+      QRScannerLogger.info(
+        'Found ${results.length} QR code(s) in ${stopwatch.elapsedMilliseconds}ms',
+      );
 
-        // Parse results
-        final results = _parseResults(resultPtr);
-        
-        stopwatch.stop();
-        QRScannerLogger.info(
-          'Found ${results.length} QR code(s) in ${stopwatch.elapsedMilliseconds}ms',
-        );
-        
-        return results;
-      } finally {
-        // Always free allocated memory
-        malloc.free(dataPtr);
-      }
+      return results;
     } on QRScannerException {
       rethrow;
     } catch (e, stackTrace) {
@@ -153,36 +130,81 @@ class SuperQRCodeScanner {
     }
   }
 
-  /// Parse native scan results into Dart objects
-  List<QRCode> _parseResults(ffi.Pointer<QRScanResult> resultPtr) {
+  /// Synchronous scan from bytes for use in compute isolate
+  static List<QRCode> _scanImageBytesSync(_ScanBytesParams params) {
+    final bindings = QRScannerBindings.load();
+    final dataPtr = malloc<ffi.Uint8>(params.imageData.length);
+
+    try {
+      final dataList = dataPtr.asTypedList(params.imageData.length);
+      dataList.setAll(0, params.imageData);
+
+      final resultPtr = bindings.scanImageBytes(
+        dataPtr,
+        params.width,
+        params.height,
+        params.channels,
+      );
+
+      if (resultPtr == ffi.nullptr) {
+        return [];
+      }
+
+      return _parseResultsSync(bindings, resultPtr);
+    } finally {
+      malloc.free(dataPtr);
+    }
+  }
+
+  /// Parse native scan results into Dart objects (static for use in isolates)
+  static List<QRCode> _parseResultsSync(
+    QRScannerBindings bindings,
+    ffi.Pointer<QRScanResult> resultPtr,
+  ) {
+    QRScannerLogger.debug('Starting to parse native scan results');
+
     try {
       final result = resultPtr.ref;
       final List<QRCode> qrCodes = [];
 
-      QRScannerLogger.debug('Parsing ${result.count} QR code(s)');
+      QRScannerLogger.debug(
+          'Found ${result.count} QR code(s) in native results');
 
       for (int i = 0; i < result.count; i++) {
         final qrResult = result.results[i];
-        
+
+        QRScannerLogger.debug('Parsing QR code [$i]');
+
         // Convert C strings to Dart strings
         final content = qrResult.content.cast<Utf8>().toDartString();
         final format = qrResult.format.cast<Utf8>().toDartString();
-        
+
+        QRScannerLogger.debug('  Format: $format');
+        QRScannerLogger.debug(
+            '  Content: ${content.substring(0, content.length > 50 ? 50 : content.length)}${content.length > 50 ? "..." : ""}');
+
         qrCodes.add(QRCode(content: content, format: format));
-        QRScannerLogger.debug('  [$i] $format: ${content.substring(0, content.length > 50 ? 50 : content.length)}${content.length > 50 ? "..." : ""}');
       }
 
+      QRScannerLogger.debug('Successfully parsed ${qrCodes.length} QR code(s)');
       return qrCodes;
     } catch (e, stackTrace) {
-      QRScannerLogger.error('Error parsing results', e, stackTrace);
-      throw ImageProcessingException(
-        'Failed to parse scan results',
-        details: e.toString(),
-        stackTrace: stackTrace,
-      );
+      QRScannerLogger.error('Error parsing native results', e, stackTrace);
+      rethrow;
     } finally {
       // Always free native memory
-      _bindings.freeResult(resultPtr);
+      QRScannerLogger.debug('Freeing native memory');
+      bindings.freeResult(resultPtr);
     }
   }
+}
+
+/// Helper class to pass multiple parameters to compute
+class _ScanBytesParams {
+  final List<int> imageData;
+  final int width;
+  final int height;
+  final int channels;
+
+  _ScanBytesParams(this.imageData, this.width, this.height, this.channels);
 }

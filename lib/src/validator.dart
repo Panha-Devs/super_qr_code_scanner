@@ -4,7 +4,7 @@ import 'exceptions.dart';
 /// Input validation utilities
 class QRScannerValidator {
   /// Validate an image file path
-  static void validateImagePath(String? imagePath) {
+  static Future<void> validateImagePath(String? imagePath) async {
     if (imagePath == null || imagePath.isEmpty) {
       throw InvalidParameterException(
         'Image path cannot be null or empty',
@@ -12,7 +12,7 @@ class QRScannerValidator {
     }
 
     final file = File(imagePath);
-    if (!file.existsSync()) {
+    if (!await file.exists()) {
       throw InvalidParameterException(
         'Image file does not exist',
         details: 'Path: $imagePath',
@@ -30,21 +30,23 @@ class QRScannerValidator {
       'tiff',
       'tif'
     ];
-    
+
     if (!validExtensions.contains(extension)) {
       throw InvalidParameterException(
         'Unsupported image format',
-        details: 'Extension: .$extension, Supported: ${validExtensions.join(", ")}',
+        details:
+            'Extension: .$extension, Supported: ${validExtensions.join(", ")}',
       );
     }
 
     // Check file size (prevent loading extremely large files)
-    final fileSize = file.lengthSync();
+    final fileSize = await file.length();
     const maxSize = 50 * 1024 * 1024; // 50MB
     if (fileSize > maxSize) {
       throw InvalidParameterException(
         'Image file is too large',
-        details: 'Size: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB, Max: ${maxSize / 1024 / 1024}MB',
+        details:
+            'Size: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB, Max: ${maxSize / 1024 / 1024}MB',
       );
     }
   }
@@ -87,7 +89,8 @@ class QRScannerValidator {
     if (imageData.length != expectedSize) {
       throw InvalidParameterException(
         'Image data size does not match dimensions',
-        details: 'Expected: $expectedSize bytes, Got: ${imageData.length} bytes',
+        details:
+            'Expected: $expectedSize bytes, Got: ${imageData.length} bytes',
       );
     }
 
