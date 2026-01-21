@@ -83,6 +83,12 @@ include_directories(
 # =========================
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
+# Add compile definitions to disable OpenCV plugin loading
+target_compile_definitions(${PROJECT_NAME} PRIVATE 
+    NO_GETENV
+    OPENCV_DISABLE_PLUGINS_IMPL
+)
+
 # =========================
 # Link Libraries
 # =========================

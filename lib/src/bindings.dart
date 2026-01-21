@@ -106,7 +106,7 @@ class QRScannerBindings {
     }
   }
 
-  static ffi.DynamicLibrary _loadLibrary() {
+  static ffi.DynamicLibrary _loadLibrary() {   
     final libraryNames = _getLibraryNames();
     
     for (final name in libraryNames) {

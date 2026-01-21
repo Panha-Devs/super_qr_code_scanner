@@ -5,8 +5,16 @@
 #include <set>
 #include <cstring>
 
+// Disable OpenCV plugin loading to avoid APK directory access issues on Android
+static struct OpenCVInitializer {
+    OpenCVInitializer() {
+        // Disable plugin loading
+        cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_ERROR);
+    }
+} opencv_initializer;
+
 // Internal function to scan QR codes from cv::Mat
-static std::vector<ZXing::Result> scanQRCodesInternal(const cv::Mat& image) {
+static std::vector<ZXing::Barcode> scanQRCodesInternal(const cv::Mat& image) {
     cv::Mat grayImage;
     if (image.channels() == 3 || image.channels() == 4) {
         cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
@@ -14,7 +22,7 @@ static std::vector<ZXing::Result> scanQRCodesInternal(const cv::Mat& image) {
         grayImage = image;
     }
     
-    std::vector<ZXing::Result> allResults;
+    std::vector<ZXing::Barcode> allResults;
     std::set<std::string> foundCodes;
     
     // Strategy 1: Original image
