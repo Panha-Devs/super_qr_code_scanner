@@ -4,12 +4,19 @@ project(super_qr_code_scanner)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find OpenCV
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
+# OpenCV from Maven (AAR gets extracted by Gradle)
+# Works for both debug and release builds
+find_library(OpenCV_LIB opencv_java4 
+    PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/opencv_sdk/native/jni/${ANDROID_ABI}"
+    NO_DEFAULT_PATH
+)
+
+# Include OpenCV headers from extracted AAR
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../../../build/opencv_sdk/native/jni/include")
 
 # Add ZXing source from bundled location
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../src/zxing-cpp-core zxing)
+# EXCLUDE_FROM_ALL prevents building unnecessary ZXing targets
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../src/zxing-cpp-core zxing EXCLUDE_FROM_ALL)
 
 # Add C API wrapper
 add_library(super_qr_code_scanner SHARED
@@ -22,7 +29,8 @@ target_include_directories(super_qr_code_scanner PRIVATE
 )
 
 target_link_libraries(super_qr_code_scanner
-    ${OpenCV_LIBS}
+    ${OpenCV_LIB}
     ZXing
     log
+    android
 )

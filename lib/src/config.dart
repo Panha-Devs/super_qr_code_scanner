@@ -24,16 +24,16 @@ class QRScannerConfig {
 
   /// Configuration optimized for speed
   static const fastConfig = QRScannerConfig(
-    maxSymbols = 5,
-    tryHarder = false,
-    timeoutMs = 5000,
+    maxSymbols: 5,
+    tryHarder: false,
+    timeoutMs: 5000,
   );
 
   /// Configuration optimized for accuracy
   static const accurateConfig = QRScannerConfig(
-    maxSymbols = 50,
-    tryHarder = true,
-    timeoutMs = 60000,
+    maxSymbols: 50,
+    tryHarder: true,
+    timeoutMs: 60000,
   );
 
   QRScannerConfig copyWith({

@@ -25,19 +25,3 @@ Pod::Spec.new do |s|
   # OpenCV dependency
   s.dependency 'OpenCV', '~> 4.5'
 end
-  s.dependency 'Flutter'
-  s.platform = :ios, '12.0'
-  s.swift_version = '5.0'
-  
-  s.pod_target_xcconfig = {
-    'DEFINES_MODULE' => 'YES',
-    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
-    'HEADER_SEARCH_PATHS' => '"${PODS_TARGET_SRCROOT}/../../../zxing-cpp/core/src" "$(inherited)"',
-    'OTHER_CPLUSPLUSFLAGS' => '-std=c++17'
-  }
-  
-  s.frameworks = 'AVFoundation', 'CoreMedia', 'CoreVideo', 'CoreImage'
-  
-  # OpenCV dependency
-  s.dependency 'OpenCV', '~> 4.5'
-end

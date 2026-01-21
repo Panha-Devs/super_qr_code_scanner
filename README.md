@@ -7,7 +7,7 @@ A robust Flutter FFI plugin for scanning QR codes from images using OpenCV and Z
 ## Features
 
 - ✅ **Multi-platform support**: Android, iOS, macOS, Linux, Windows
-- ✅ **Multiple QR codes**: Detect multiple QR codes in a single image
+- ✅ **Multiple QR codes**: Detect up to 50 QR codes in a single image
 - ✅ **High accuracy**: 6 detection strategies with image preprocessing
 - ✅ **Type-safe**: Strong type checking with custom exception hierarchy
 - ✅ **Configurable**: Adjust scanning parameters for speed vs accuracy
@@ -23,6 +23,7 @@ Add to your `pubspec.yaml`:
 ```yaml
 dependencies:
   super_qr_code_scanner: ^1.0.0
+  image_picker: ^1.0.7  # Optional: For picking images
 ```
 
 Run:
@@ -37,6 +38,8 @@ flutter pub get
 
 ## Quick Start
 
+### Basic Usage
+
 ```dart
 import 'package:super_qr_code_scanner/super_qr_code_scanner.dart';
 
@@ -46,53 +49,169 @@ final scanner = SuperQRCodeScanner();
 // Scan from file path
 try {
   final results = scanner.scanImageFile('/path/to/image.jpg');
+  
   for (final qr in results) {
-    print('${qr.format}: ${qr.content}');
+    print('Format: ${qr.format}');
+    print('Content: ${qr.content}');
+  }
+  
+  if (results.isEmpty) {
+    print('No QR codes found');
   }
 } on InvalidParameterException catch (e) {
   print('Invalid input: ${e.message}');
 } on ImageProcessingException catch (e) {
   print('Failed to process: ${e.message}');
 }
+```
 
-// Scan from raw bytes
-final results = scanner.scanImageBytes(
-  imageData,  // List<int> pixel data
-  width,      // Image width
-  height,     // Image height  
-  3,          // Channels (1=gray, 3=RGB, 4=RGBA)
-);
+### Scan from Raw Bytes
+
+```dart
+import 'dart:typed_data';
+
+void scanFromBytes(Uint8List imageData, int width, int height) {
+  final scanner = SuperQRCodeScanner();
+  
+  // Scan RGB image (3 channels)
+  final results = scanner.scanImageBytes(
+    imageData,
+    width,
+    height,
+    3, // channels: 1=grayscale, 3=RGB, 4=RGBA
+  );
+  
+  print('Found ${results.length} QR codes');
+}
+```
+
+### Complete Example with Image Picker
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:super_qr_code_scanner/super_qr_code_scanner.dart';
+import 'package:image_picker/image_picker.dart';
+
+class QRScannerDemo extends StatefulWidget {
+  @override
+  State<QRScannerDemo> createState() => _QRScannerDemoState();
+}
+
+class _QRScannerDemoState extends State<QRScannerDemo> {
+  final scanner = SuperQRCodeScanner();
+  final picker = ImagePicker();
+  List<QRCode> results = [];
+  bool isScanning = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Optional: Configure scanner for accuracy
+    scanner.updateConfig(QRScannerConfig.accurateConfig);
+  }
+
+  Future<void> pickAndScan() async {
+    try {
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+      );
+      
+      if (image == null) return;
+
+      setState(() => isScanning = true);
+
+      // Scan in background to avoid blocking UI
+      final qrCodes = await Future.microtask(
+        () => scanner.scanImageFile(image.path),
+      );
+
+      setState(() {
+        results = qrCodes;
+        isScanning = false;
+      });
+    } catch (e) {
+      setState(() => isScanning = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('QR Scanner')),
+      body: Column(
+        children: [
+          ElevatedButton(
+            onPressed: isScanning ? null : pickAndScan,
+            child: Text(isScanning ? 'Scanning...' : 'Pick Image'),
+          ),
+          
+          if (results.isNotEmpty)
+            Expanded(
+              child: ListView.builder(
+                itemCount: results.length,
+                itemBuilder: (context, index) {
+                  final qr = results[index];
+                  return Card(
+                    child: ListTile(
+                      title: Text(qr.content),
+                      subtitle: Text('Format: ${qr.format}'),
+                    ),
+                  );
+                },
+              ),
+            )
+          else
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('No QR codes found'),
+            ),
+        ],
+      ),
+    );
+  }
+}
 ```
 
 ## Configuration
 
-```dart
-// Use default configuration
-scanner.updateConfig(QRScannerConfig.defaultConfig);
+### Predefined Configs
 
-// Optimize for speed
+```dart
+// Fast scanning (fewer strategies, good for real-time)
 scanner.updateConfig(QRScannerConfig.fastConfig);
 
-// Optimize for accuracy
-scanner.updateConfig(QRScannerConfig.accurateConfig);
+// Balanced (default, recommended for most use cases)
+scanner.updateConfig(QRScannerConfig.defaultConfig);
 
-// Custom configuration
+// Accurate (all strategies, thorough but slower)
+scanner.updateConfig(QRScannerConfig.accurateConfig);
+```
+
+### Custom Configuration
+
+```dart
 scanner.updateConfig(QRScannerConfig(
-  maxSymbols: 10,
-  enableLogging: true,
-  timeoutMs: 15000,
-  tryHarder: true,
+  tryHarder: true,           // More thorough scanning
+  tryRotate: true,           // Try rotating image
+  tryDownscale: true,        // Try downscaling
+  maxNumberOfSymbols: 50,    // Max QR codes to detect
+  enableLogging: true,       // Enable debug logs
 ));
 ```
 
-## Logging
+## Debug Logging
 
 ```dart
-import 'package:super_qr_code_scanner/super_qr_code_scanner.dart';
-
-// Enable debug logging
-QRScannerLogger.setEnabled(true);
-QRScannerLogger.setLevel(LogLevel.debug);
+// Enable logging in main()
+void main() {
+  QRScannerLogger.setEnabled(true);
+  QRScannerLogger.setLevel(LogLevel.debug);  // debug, info, warning, error
+  
+  runApp(MyApp());
+}
 
 // Or via config
 scanner.updateConfig(
@@ -102,28 +221,31 @@ scanner.updateConfig(
 
 ## Exception Handling
 
-The plugin provides specific exception types for better error handling:
+The plugin provides specific exception types:
 
-- **QRScannerException**: Base exception class
-- **LibraryLoadException**: Failed to load native library
-- **ImageProcessingException**: Failed to process image
-- **InvalidParameterException**: Invalid input parameters
+| Exception | Description |
+|-----------|-------------|
+| `QRScannerException` | Base exception class |
+| `LibraryLoadException` | Failed to load native library |
+| `ImageProcessingException` | Failed to process image |
+| `InvalidParameterException` | Invalid input parameters |
 
 ```dart
 try {
   final results = scanner.scanImageFile(imagePath);
+  // Process results
 } on LibraryLoadException catch (e) {
-  // Handle library loading errors
+  // Native library failed to load
   print('Library error: ${e.message}');
   print('Details: ${e.details}');
 } on InvalidParameterException catch (e) {
-  // Handle validation errors
+  // Invalid image path, format, or parameters
   print('Invalid input: ${e.message}');
 } on ImageProcessingException catch (e) {
-  // Handle processing errors
-  print('Processing failed: ${e.message}');
+  // Image processing failed
+  print('Processing error: ${e.message}');
 } on QRScannerException catch (e) {
-  // Handle any other scanner errors
+  // Generic scanner error
   print('Scanner error: ${e.message}');
 }
 ```
@@ -148,48 +270,100 @@ class QRCodePosition {
   final int y;
   final int width;
   final int height;
-}
-```
+}Supported Image Formats
 
-## Input Validation
+The plugin automatically validates input:
 
-The plugin automatically validates:
-
-- File path existence and format
-- Image file size (max 50MB)
-- Supported formats: jpg, jpeg, png, bmp, webp, tiff, tif
+- **File formats**: JPG, JPEG, PNG, BMP, WEBP, TIFF, TIF
+- **Max file size**: 50MB
+- **Max dimensions**: 10000x10000 pixels
+- **Color modes**: Grayscale (1 channel), RGB (3 channels), RGBA (4 channels)
+- **Path validation**: Checks file exists and is readable
+- **Data validation**: Verifies raw image data size matches dimensionsg, bmp, webp, tiff, tif
 - Image dimensions (max 10000x10000)
 - Raw image data size matches dimensions
 - Valid channel count (1, 3, or 4)
 
-## Architecture
+## API Reference
 
-```
-lib/
-├── super_qr_code_scanner.dart  # Main API
-└── src/
-    ├── models.dart             # Data models (QRCode, QRCodePosition)
-    ├── exceptions.dart         # Exception hierarchy
-    ├── bindings.dart           # FFI bindings
-    ├── validator.dart          # Input validation
-    ├── config.dart             # Configuration options
-    └── logger.dart             # Logging utilities
-```
+### Methods
 
-## Performance Tips
+#### `scanImageFile(String imagePath)`
+Scans QR codes from an image file.
 
-1. **Use appropriate config**: Choose `fastConfig` for real-time, `accurateConfig` for batch processing
-2. **Image size**: Smaller images scan faster but may miss small QR codes
-3. **Channels**: Use grayscale (1 channel) when possible for faster processing
-4. **Disable logging**: Turn off logging in production for better performance
+**Returns:** `List<QRCode>` - Found QR codes (empty if none)
 
-## Detection Strategies
+**Throws:** `InvalidParameterException`, `ImageProcessingException`
 
-The native implementation uses 6 strategies:
+#### `scanImageBytes(List<int> imageData, int width, int height, int channels)`
+Scans QR codes from raw image data.
 
-1. **Original**: Scan image as-is with aggressive options
-2. **Multi-scale**: Try different scales (0.5x, 2.0x, 3.0x)
-3. **Histogram equalization**: Improve contrast
+**Parameters:**
+- `imageData`: Raw pixel data
+- `width`: Image width in pixels
+- `height`: Image height in pixels
+- `channels`: 1 (grayscale), 3 (RGB), or 4 (RGBA)
+
+**Returns:** `List<QRCode>` - Found QR codes (empty if none)
+
+#### `updateConfig(QRScannerConfig config)`
+Updates scanner configuration.
+
+### Models
+
+#### `QRCode`
+```dart
+class QRCode {
+  final String content;  // QR code text content
+  final String format;   // Format (e.g., "QR_CODE")
+}Platform Setup
+
+### Android
+- **Min SDK**: 21 (Android 5.0)
+- **Permissions**: Add to `AndroidManifest.xml` if using camera:
+  ```xml
+  <uses-permission android:name="android.permission.CAMERA" />
+  ```
+
+### iOS
+- **Min Version**: iOS 12.0
+- **Permissions**: Add to `Info.plist` if using camera:
+  ```xml
+  <key>NSCameraUsageDescription</key>
+  <string>We need camera access to scan QR codes</string>
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>We need photo library access to select images</string>
+  ```
+
+### Dependencies (Automatic)
+
+The package is completely self-contained:
+
+**Android:**
+- Op"No QR codes found"
+- Ensure image has good quality and lighting
+- Try `accurateConfig` for difficult images
+- Check image isn't too blurry or small
+
+### "Invalid image path"
+- Use absolute paths
+- Verify file exists and is readable
+- Check supported formats
+
+### Build errors on Android
+- Clean build: `flutter clean && flutter pub get`
+- Check NDK is installed in Android Studio
+
+### Build errors on iOS
+- Run `cd ios && pod install`
+- Clean Xcode build folder
+
+### Library not found error
+```dart
+// Enable logging to see detailed error messages
+QRScannerLogger.setEnabled(true);
+QRScannerLogger.setLevel(LogLevel.debug);
+```t
 4. **Adaptive threshold**: Otsu and adaptive thresholding
 5. **Inverted**: Scan inverted grayscale image
 6. **Sharpened**: Apply sharpening kernel

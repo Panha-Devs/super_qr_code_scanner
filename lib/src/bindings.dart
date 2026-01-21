@@ -131,24 +131,25 @@ class QRScannerBindings {
 
   static List<String> _getLibraryNames() {
     if (Platform.isAndroid) {
-      return ['libqr_scanner_native.so'];
+      return ['libsuper_qr_code_scanner.so'];
     } else if (Platform.isIOS) {
-      return ['QRScannerNative.framework/QRScannerNative'];
+      // iOS FFI plugin uses DynamicLibrary.process() for static linking
+      return ['super_qr_code_scanner'];
     } else if (Platform.isMacOS) {
       return [
-        'libqr_scanner_native.dylib',
-        'Frameworks/libqr_scanner_native.dylib',
+        'libsuper_qr_code_scanner.dylib',
+        'Frameworks/libsuper_qr_code_scanner.dylib',
       ];
     } else if (Platform.isLinux) {
       return [
-        'libqr_scanner_native.so',
-        './libqr_scanner_native.so',
-        '/usr/local/lib/libqr_scanner_native.so',
+        'libsuper_qr_code_scanner.so',
+        './libsuper_qr_code_scanner.so',
+        '/usr/local/lib/libsuper_qr_code_scanner.so',
       ];
     } else if (Platform.isWindows) {
       return [
-        'qr_scanner_native.dll',
-        'bin/qr_scanner_native.dll',
+        'super_qr_code_scanner.dll',
+        'bin/super_qr_code_scanner.dll',
       ];
     } else {
       throw UnsupportedError(

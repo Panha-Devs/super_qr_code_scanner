@@ -11,7 +11,7 @@ import 'src/logger.dart';
 export 'src/models.dart' show QRCode, QRCodePosition;
 export 'src/exceptions.dart';
 export 'src/config.dart';
-export 'src/logger.dart' show LogLevel;
+export 'src/logger.dart' show LogLevel, QRScannerLogger;
 
 /// Main QR Scanner API
 class SuperQRCodeScanner {
@@ -162,7 +162,7 @@ class SuperQRCodeScanner {
       QRScannerLogger.debug('Parsing ${result.count} QR code(s)');
 
       for (int i = 0; i < result.count; i++) {
-        final qrResult = result.results.elementAt(i).ref;
+        final qrResult = result.results[i];
         
         // Convert C strings to Dart strings
         final content = qrResult.content.cast<Utf8>().toDartString();
