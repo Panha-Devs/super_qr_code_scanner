@@ -1,6 +1,6 @@
 name: super_qr_code_scanner
 description: A robust Flutter plugin for scanning QR codes from images using OpenCV and ZXing. High-performance native implementation with multi-platform support.
-version: 1.0.1
+version: 1.0.2
 homepage: https://github.com/Panha-Devs/super_qr_code_scanner
 repository: https://github.com/Panha-Devs/super_qr_code_scanner
 issue_tracker: https://github.com/Panha-Devs/super_qr_code_scanner/issues
