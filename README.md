@@ -54,13 +54,13 @@ To reduce package size, native libraries are not bundled. Run the setup command 
 
 ```bash
 # For Android and iOS (default - recommended for most apps)
-flutter pub run super_qr_code_scanner:setup
+dart run super_qr_code_scanner:setup
 
 # For specific platforms
-flutter pub run super_qr_code_scanner:setup --platforms android,ios
+dart run super_qr_code_scanner:setup --platforms android,ios
 
 # For all platforms
-flutter pub run super_qr_code_scanner:setup --platforms android,ios,macos,linux,windows
+dart run super_qr_code_scanner:setup --platforms android,ios,macos,linux,windows
 ```
 
 This downloads OpenCV and ZXing libraries from our public GitHub releases and places them in the plugin's native directories. The setup is safe to run multiple times - it skips downloads if libraries are already present.
@@ -470,6 +470,20 @@ The package is completely self-contained with custom-compiled native libraries:
 See the [example app](example/) for a complete working implementation with image picker.
 
 ## Troubleshooting
+
+### Android build errors with .cxx directory
+
+If you encounter build errors related to CMake or native compilation, try removing the `.cxx` directory:
+
+```bash
+cd android
+rm -rf .cxx
+cd ..
+flutter clean
+flutter pub get
+```
+
+This directory contains cached CMake build artifacts that may become corrupted.
 
 ### Library not found error
 

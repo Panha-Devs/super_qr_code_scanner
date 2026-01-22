@@ -13,14 +13,14 @@ dependencies:
   flutter:
     sdk: flutter
   ffi: ^2.1.0
+  http: ^1.0.0
+  archive: ^3.4.10
+  args: ^2.4.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  http: ^1.0.0
-  archive: ^3.4.10
-  args: ^2.4.2
 
 executables:
   setup: setup
