@@ -98,9 +98,10 @@ Future<void> downloadAndExtract(
     if (file.isFile) {
       final data = file.content as List<int>;
       String relativePath = filename;
-      // Strip top-level folder if it matches the ABI
-      if (filename.startsWith('$abi/')) {
-        relativePath = filename.substring(abi.length + 1);
+      // Strip top-level folder if it matches the platform-abi
+      final topLevelFolder = '$platform-$abi/';
+      if (filename.startsWith(topLevelFolder)) {
+        relativePath = filename.substring(topLevelFolder.length);
       }
       final filePath = path.join(extractDir.path, relativePath);
       await Directory(path.dirname(filePath)).create(recursive: true);
