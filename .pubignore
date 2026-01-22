@@ -17,3 +17,7 @@ coverage/
 example/build/
 example/.dart_tool/
 example/pubspec.lock
+
+# Exclude downloaded native libraries (users download via setup script)
+src/opencv/libs/
+src/zxing/libs/
