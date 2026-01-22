@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## [1.0.4]
+- Update archive dependency to ^4.0.0 for better compatibility with other packages
+
 ## [1.0.3]
 - Add logic to request binaries base on platform request
 - Improve performance and add thread and non-blocking UI
