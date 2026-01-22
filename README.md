@@ -9,12 +9,29 @@ A robust Flutter FFI plugin for scanning QR codes from images using OpenCV and Z
 - ✅ **Multi-platform support**: Android, iOS, macOS, Linux, Windows
 - ✅ **Multiple QR codes**: Detect up to 50 QR codes in a single image
 - ✅ **High accuracy**: 6 detection strategies with image preprocessing
+- ✅ **Non-blocking UI**: Async API with isolate-based processing
+- ✅ **Native threading**: C++ worker threads for parallel execution
 - ✅ **Type-safe**: Strong type checking with custom exception hierarchy
 - ✅ **Configurable**: Adjust scanning parameters for speed vs accuracy
 - ✅ **Logging**: Built-in debug logging for troubleshooting
 - ✅ **Validated input**: Automatic validation of image paths and data
 - ✅ **Memory-safe**: Proper native memory management
 - ✅ **Zero setup**: All dependencies bundled, no external configuration needed
+
+## Supported Platforms
+
+| Platform | Minimum Version | Status | Architecture |
+|----------|----------------|--------|--------------|
+| **Android** | API 21 (Android 5.0) | ✅ Tested | arm64-v8a, armeabi-v7a |
+| **iOS** | iOS 12.0+ | ✅ Tested | arm64, x86_64 (simulator) |
+| **macOS** | macOS 10.14+ | ✅ Tested | arm64 (Apple Silicon), x86_64 (Intel) |
+| **Linux** | Ubuntu 18.04+ | ⚠️ Experimental | x64 |
+| **Windows** | Windows 10+ | ⚠️ Experimental | x64 |
+
+**Notes:**
+- Android and iOS are fully tested and production-ready
+- Desktop platforms (macOS/Linux/Windows) are functional but require more testing
+- All platforms use the same native libraries and API
 
 ## Installation
 
@@ -32,8 +49,8 @@ flutter pub get
 ```
 
 **That's it!** No additional setup required. The package includes:
-- ZXing-C++ source code (bundled)
-- OpenCV (auto-fetched from Maven for Android, CocoaPods for iOS)
+- ZXing-C++ 2.3.0 (custom compiled, bundled)
+- OpenCV 4.14.0-pre (custom compiled, bundled)
 - Native C++ compilation (automatic)
 
 ## Quick Start
@@ -46,22 +63,24 @@ import 'package:super_qr_code_scanner/super_qr_code_scanner.dart';
 // Initialize scanner (singleton - done once)
 final scanner = SuperQRCodeScanner();
 
-// Scan from file path
-try {
-  final results = scanner.scanImageFile('/path/to/image.jpg');
-  
-  for (final qr in results) {
-    print('Format: ${qr.format}');
-    print('Content: ${qr.content}');
+// Scan from file path (async - runs in isolate)
+Future<void> scanImage() async {
+  try {
+    final results = await scanner.scanImageFile('/path/to/image.jpg');
+    
+    for (final qr in results) {
+      print('Format: ${qr.format}');
+      print('Content: ${qr.content}');
+    }
+    
+    if (results.isEmpty) {
+      print('No QR codes found');
+    }
+  } on InvalidParameterException catch (e) {
+    print('Invalid input: ${e.message}');
+  } on ImageProcessingException catch (e) {
+    print('Failed to process: ${e.message}');
   }
-  
-  if (results.isEmpty) {
-    print('No QR codes found');
-  }
-} on InvalidParameterException catch (e) {
-  print('Invalid input: ${e.message}');
-} on ImageProcessingException catch (e) {
-  print('Failed to process: ${e.message}');
 }
 ```
 
@@ -70,11 +89,11 @@ try {
 ```dart
 import 'dart:typed_data';
 
-void scanFromBytes(Uint8List imageData, int width, int height) {
+Future<void> scanFromBytes(Uint8List imageData, int width, int height) async {
   final scanner = SuperQRCodeScanner();
   
-  // Scan RGB image (3 channels)
-  final results = scanner.scanImageBytes(
+  // Scan RGB image (3 channels) - runs in isolate
+  final results = await scanner.scanImageBytes(
     imageData,
     width,
     height,
@@ -120,10 +139,8 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
 
       setState(() => isScanning = true);
 
-      // Scan in background to avoid blocking UI
-      final qrCodes = await Future.microtask(
-        () => scanner.scanImageFile(image.path),
-      );
+      // Scan in isolate - UI remains responsive
+      final qrCodes = await scanner.scanImageFile(image.path);
 
       setState(() {
         results = qrCodes;
@@ -288,15 +305,19 @@ The plugin automatically validates input:
 
 ### Methods
 
-#### `scanImageFile(String imagePath)`
-Scans QR codes from an image file.
+#### `Future<List<QRCode>> scanImageFile(String imagePath)`
+Scans QR codes from an image file. Runs in a separate isolate to avoid blocking the UI.
 
-**Returns:** `List<QRCode>` - Found QR codes (empty if none)
+**Returns:** `Future<List<QRCode>>` - Found QR codes (empty if none)
 
 **Throws:** `InvalidParameterException`, `ImageProcessingException`
 
-#### `scanImageBytes(List<int> imageData, int width, int height, int channels)`
-Scans QR codes from raw image data.
+```dart
+final results = await scanner.scanImageFile('/path/to/image.jpg');
+```
+
+#### `Future<List<QRCode>> scanImageBytes(List<int> imageData, int width, int height, int channels)`
+Scans QR codes from raw image data. Runs in a separate isolate to avoid blocking the UI.
 
 **Parameters:**
 - `imageData`: Raw pixel data
@@ -304,7 +325,11 @@ Scans QR codes from raw image data.
 - `height`: Image height in pixels
 - `channels`: 1 (grayscale), 3 (RGB), or 4 (RGBA)
 
-**Returns:** `List<QRCode>` - Found QR codes (empty if none)
+**Returns:** `Future<List<QRCode>>` - Found QR codes (empty if none)
+
+```dart
+final results = await scanner.scanImageBytes(data, width, height, 3);
+```
 
 #### `updateConfig(QRScannerConfig config)`
 Updates scanner configuration.
@@ -316,7 +341,40 @@ Updates scanner configuration.
 class QRCode {
   final String content;  // QR code text content
   final String format;   // Format (e.g., "QR_CODE")
-}Platform Setup
+}
+```
+
+## Performance Architecture
+
+### Multi-Level Threading
+
+The plugin uses a sophisticated threading architecture for optimal performance:
+
+**Flutter Layer (Dart):**
+- Uses `compute()` to run FFI calls in separate Dart isolates
+- Prevents UI thread blocking during image processing
+- Each scan runs in its own isolated environment
+
+**Native Layer (C++):**
+- Uses `std::async(std::launch::async)` for parallel execution
+- Worker threads handle image loading and processing
+- Multiple detection strategies run concurrently
+
+**Result:**
+- ✅ UI remains responsive even during heavy processing
+- ✅ True parallel execution on multi-core devices
+- ✅ No manual thread management required
+- ✅ Automatic memory cleanup
+
+### Why This Matters
+
+```dart
+// ❌ Old synchronous approach (blocks UI)
+final results = scanImageSync(path);  // UI freezes!
+
+// ✅ New async approach (smooth UI)
+final results = await scanner.scanImageFile(path);  // UI responsive!
+```Platform Setup
 
 ### Android
 - **Min SDK**: 21 (Android 5.0)
@@ -372,19 +430,26 @@ QRScannerLogger.setLevel(LogLevel.debug);
 
 ### No setup required!
 
-The package is completely self-contained. Dependencies are automatically handled:
+The package is completely self-contained with custom-compiled native libraries:
 
 **Android:**
 - Min SDK: 21 (Android 5.0)
-- OpenCV: Automatically fetched from Maven Central
-- ZXing: Bundled with package
+- OpenCV 4.14.0-pre: Custom compiled, bundled as native libraries
+- ZXing-C++ 2.3.0: Custom compiled, bundled as static libraries
+- NDK: Automatically managed by Flutter
 
 **iOS:**
 - iOS 12.0+
-- OpenCV: Automatically installed via CocoaPods
-- ZXing: Bundled with package
+- OpenCV 4.14.0-pre: Custom compiled, bundled as frameworks
+- ZXing-C++ 2.3.0: Custom compiled, bundled as static libraries
+- No CocoaPods dependencies required
 
-**First build may take 5-10 minutes** as dependencies are downloaded and compiled. Subsequent builds are fast.
+**Desktop (macOS, Linux, Windows):**
+- OpenCV 4.14.0-pre: Custom compiled, bundled
+- ZXing-C++ 2.3.0: Custom compiled, bundled
+- All native libraries included
+
+**First build may take 2-5 minutes** as native code is compiled. Subsequent builds are fast.
 
 ## Example App
 
@@ -407,11 +472,18 @@ QRScannerLogger.setLevel(LogLevel.debug);
 - Check that QR code is clearly visible
 - Verify supported format (standard QR codes only)
 
+### UI still freezes during scan
+
+- Ensure you're using `await` with scan methods
+- Check that you're not blocking the UI thread elsewhere
+- Verify Flutter version supports `compute()` (Flutter 1.0+)
+
 ### Memory issues
 
 - Reduce image size before scanning
 - Ensure proper disposal of resources
 - Check that file size is within limits (50MB)
+- Multiple concurrent scans may increase memory usage
 
 ## License
 
