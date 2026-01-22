@@ -116,3 +116,7 @@ ehthumbs.db
 
 # OpenCV headers are bundled - do not ignore
 !android/opencv_include/
+
+# Download artifacts libs
+/src/opencv/libs/
+/src/zxing/libs/

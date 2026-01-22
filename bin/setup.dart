@@ -72,11 +72,10 @@ Future<void> downloadAndExtract(
   final assetName = '$lib-$platform-$abi.zip';
   final extractDir = Directory(path.join(libsDir.path, '$platform-$abi'));
 
-  // Check if already extracted
-  if (await extractDir.exists() &&
-      (await extractDir.list().toList()).isNotEmpty) {
-    print('$lib libs for $platform-$abi already exist, skipping...');
-    return;
+  // Remove existing directory to ensure fresh download
+  if (await extractDir.exists()) {
+    await extractDir.delete(recursive: true);
+    print('Removed existing $lib libs for $platform-$abi');
   }
 
   final url =
@@ -98,7 +97,13 @@ Future<void> downloadAndExtract(
     final filename = file.name;
     if (file.isFile) {
       final data = file.content as List<int>;
-      final filePath = path.join(extractDir.path, filename);
+      String relativePath = filename;
+      // Strip top-level folder if it matches the ABI
+      if (filename.startsWith('$abi/')) {
+        relativePath = filename.substring(abi.length + 1);
+      }
+      final filePath = path.join(extractDir.path, relativePath);
+      await Directory(path.dirname(filePath)).create(recursive: true);
       await File(filePath).writeAsBytes(data);
     }
   }
