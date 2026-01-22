@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## [1.0.5]
+- Update setup script to find path to save fetch libs correctly
+
 ## [1.0.4]
 - Update archive dependency to ^4.0.0 for better compatibility with other packages
 
