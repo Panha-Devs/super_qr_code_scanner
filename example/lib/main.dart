@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:super_qr_code_scanner/super_qr_code_scanner.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:super_qr_code_scanner_example/mixin/state_mixin.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +31,8 @@ class QRScannerDemo extends StatefulWidget {
   State<QRScannerDemo> createState() => _QRScannerDemoState();
 }
 
-class _QRScannerDemoState extends State<QRScannerDemo> {
+class _QRScannerDemoState extends State<QRScannerDemo>
+    with SafeStateMixin<QRScannerDemo> {
   final scanner = SuperQRCodeScanner();
   final imagePicker = ImagePicker();
   List<QRCode> results = [];
@@ -41,12 +43,11 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
   @override
   void initState() {
     super.initState();
-    // Initialize with default config
     scanner.updateConfig(QRScannerConfig.defaultConfig);
   }
 
   void _updateConfig(String config) {
-    setState(() {
+    safeSetState(() {
       selectedConfig = config;
     });
 
@@ -81,14 +82,16 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
         maxHeight: 1920,
       );
 
-      setState(() {
+      if (!mounted) return;
+
+      safeSetState(() {
         isScanning = true;
         errorMessage = null;
         results = [];
       });
 
       if (pickedFile == null) {
-        setState(() {
+        safeSetState(() {
           isScanning = false;
         });
         _showSnackBar('No image selected');
@@ -98,7 +101,7 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
       // Run scan in background to avoid blocking UI
       final qrCodes = await scanner.scanImageFile(pickedFile.path);
 
-      setState(() {
+      safeSetState(() {
         results = qrCodes;
         isScanning = false;
       });
@@ -109,19 +112,19 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
         _showSnackBar('Found ${qrCodes.length} QR code(s)');
       }
     } on InvalidParameterException catch (e) {
-      setState(() {
+      safeSetState(() {
         isScanning = false;
         errorMessage = 'Invalid input: ${e.message}';
       });
       _showSnackBar(errorMessage!);
     } on ImageProcessingException catch (e) {
-      setState(() {
+      safeSetState(() {
         isScanning = false;
         errorMessage = 'Processing failed: ${e.message}';
       });
       _showSnackBar(errorMessage!);
     } catch (e) {
-      setState(() {
+      safeSetState(() {
         isScanning = false;
         errorMessage = 'Error: $e';
       });
