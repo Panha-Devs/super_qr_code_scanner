@@ -48,10 +48,24 @@ Run:
 flutter pub get
 ```
 
-**That's it!** No additional setup required. The package includes:
-- ZXing-C++ 2.3.0 (custom compiled, bundled)
-- OpenCV 4.14.0-pre (custom compiled, bundled)
-- Native C++ compilation (automatic)
+### Platform Setup
+
+To reduce package size, native libraries are not bundled. Run the setup command to download libraries for your target platforms:
+
+```bash
+# For Android and iOS (default - recommended for most apps)
+flutter pub run super_qr_code_scanner:setup
+
+# For specific platforms
+flutter pub run super_qr_code_scanner:setup --platforms android,ios
+
+# For all platforms
+flutter pub run super_qr_code_scanner:setup --platforms android,ios,macos,linux,windows
+```
+
+This downloads OpenCV and ZXing libraries from our public GitHub releases and places them in the plugin's native directories. The setup is safe to run multiple times - it skips downloads if libraries are already present.
+
+**Note:** Libraries are hosted at [Panha-Devs/super_qr_code_scanner_artifacts](https://github.com/Panha-Devs/super_qr_code_scanner_artifacts).
 
 ## Quick Start
 
