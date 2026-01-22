@@ -1,12 +1,12 @@
 # CHANGELOG
 
-## [1.0.2] - 2024-01-21
+## [1.0.2]
 - Add example folder for demo use cases
 
-## [1.0.1] - 2024-01-21
+## [1.0.1]
 - Update latest version for flutter lints
 
-## [1.0.0] - 2024-01-21
+## [1.0.0]
 
 ### 🎉 Initial Release - Production Ready!
 
