@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [1.0.3]
+- Add logic to request binaries base on platform request
+- Improve performance and add thread and non-blocking UI
+- Enchantment for functionality
+
 ## [1.0.2]
 - Add example folder for demo use cases
 
