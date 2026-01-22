@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## [1.0.6]
+- Fix setup script to properly handle both relative and absolute rootUri paths in package_config.json
+
 ## [1.0.5]
 - Update setup script to find path to save fetch libs correctly
 
