@@ -76,12 +76,6 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
   }
 
   Future<void> _scanImage(ImageSource source) async {
-    setState(() {
-      isScanning = true;
-      errorMessage = null;
-      results = [];
-    });
-
     try {
       // Pick image from gallery or camera
       final XFile? pickedFile = await imagePicker.pickImage(
@@ -89,6 +83,12 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
         maxWidth: 1920,
         maxHeight: 1920,
       );
+
+      setState(() {
+        isScanning = true;
+        errorMessage = null;
+        results = [];
+      });
 
       if (pickedFile == null) {
         setState(() {
@@ -194,7 +194,6 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
                 ),
               ),
               const SizedBox(height: 16),
-
               // Scan buttons
               Row(
                 children: [
@@ -238,34 +237,33 @@ class _QRScannerDemoState extends State<QRScannerDemo> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                SizedBox(
-                  height: 300,
-                  child: ListView.builder(
-                    itemCount: results.length,
-                    itemBuilder: (context, index) {
-                      final qr = results[index];
-                      return Card(
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            child: Text('${index + 1}'),
-                          ),
-                          title: Text(
-                            qr.content,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Text('Format: ${qr.format}'),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.copy),
-                            onPressed: () {
-                              // In a real app, copy to clipboard
-                              _showSnackBar('Copied: ${qr.content}');
-                            },
-                          ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: results.length,
+                  itemBuilder: (context, index) {
+                    final qr = results[index];
+                    return Card(
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          child: Text('${index + 1}'),
                         ),
-                      );
-                    },
-                  ),
+                        title: Text(
+                          qr.content,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text('Format: ${qr.format}'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.copy),
+                          onPressed: () {
+                            // In a real app, copy to clipboard
+                            _showSnackBar('Copied: ${qr.content}');
+                          },
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ] else if (errorMessage != null)
                 Card(

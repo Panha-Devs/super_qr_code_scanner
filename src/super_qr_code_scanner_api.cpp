@@ -1,5 +1,6 @@
 #include "super_qr_code_scanner_api.h"
 #include <opencv2/opencv.hpp>
+#include <opencv2/core/utils/logger.hpp>
 #include <ReadBarcode.h>
 #include <vector>
 #include <set>
@@ -7,11 +8,16 @@
 #include <future>
 #include <thread>
 
-// Disable OpenCV plugin loading to avoid APK directory access issues on Android
+static int opencvErrorHandler(int status, const char* func_name, const char* err_msg, const char* file_name, int line, void* userdata) {
+    // Suppress OpenCV errors to avoid log spam on Android
+    return 0;
+}
+
 static struct OpenCVInitializer {
     OpenCVInitializer() {
-        // Disable plugin loading
-        cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_ERROR);
+        // Disable plugin loading and suppress all OpenCV logging
+        cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_SILENT);
+        cv::redirectError(opencvErrorHandler);
     }
 } opencv_initializer;
 

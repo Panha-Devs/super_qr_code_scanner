@@ -74,7 +74,6 @@ set(ZXING_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zxing/libs/${PLATFORM}-${ABI})
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${OPENCV_INCLUDE_DIR}
-    ${OPENCV_INCLUDE_DIR}/opencv4
     ${ZXING_INCLUDE_DIR}
 )
 
