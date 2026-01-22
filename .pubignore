@@ -1,0 +1,19 @@
+# Exclude development files
+.vscode/
+.idea/
+*.log
+*.tmp
+
+# Exclude build artifacts
+build/
+.dart_tool/
+.packages
+pubspec.lock
+
+# Exclude test coverage
+coverage/
+
+# Exclude example build artifacts
+example/build/
+example/.dart_tool/
+example/pubspec.lock
