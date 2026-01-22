@@ -1,7 +1,6 @@
 #!/usr/bin/env dart
 
 import 'dart:io';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:archive/archive.dart';
 import 'package:path/path.dart' as path;
@@ -115,28 +114,58 @@ Future<void> downloadAndExtract(
 }
 
 Directory findPackageRoot(String packageName) {
-  final configFile = File('.dart_tool/package_config.json');
-  if (!configFile.existsSync()) {
-    throw Exception('package_config.json not found. Run dart pub get first.');
+  // When running from a published package, use the script's location
+  final scriptUri = Platform.script;
+  final scriptPath = scriptUri.toFilePath();
+
+  // Check if we're running from pub cache (published package)
+  if (scriptPath.contains('.pub-cache')) {
+    // Navigate up from bin/setup.dart to the package root
+    final binDir = Directory(path.dirname(scriptPath));
+    final packageRoot = binDir.parent;
+
+    if (!packageRoot.existsSync()) {
+      throw Exception('Package root does not exist: ${packageRoot.path}');
+    }
+
+    return packageRoot;
+  } else if (scriptPath.contains('.dart_tool/pub')) {
+    final binDir = Directory(path.dirname(scriptPath));
+    final superQrDir = binDir.parent;
+    final pubDir = superQrDir.parent;
+    final dartToolDir = pubDir.parent;
+    final packageRoot = dartToolDir.parent;
+
+    // Verify this is the correct package root
+    final pubspec = File(path.join(packageRoot.path, 'pubspec.yaml'));
+    if (!pubspec.existsSync()) {
+      throw Exception('pubspec.yaml not found. Invalid package structure.');
+    }
+
+    final content = pubspec.readAsStringSync();
+    if (!content.contains('name: $packageName')) {
+      throw Exception('Package $packageName not found in resolved directory');
+    }
+
+    return packageRoot;
+  } else {
+    // Running from development directory directly
+    final cwd = Directory.current;
+
+    // Look for pubspec.yaml to confirm we're in the right place
+    final pubspec = File(path.join(cwd.path, 'pubspec.yaml'));
+    if (!pubspec.existsSync()) {
+      throw Exception(
+          'pubspec.yaml not found in current directory. Please run from the package root.');
+    }
+
+    // Verify this is the correct package
+    final content = pubspec.readAsStringSync();
+    if (!content.contains('name: $packageName')) {
+      throw Exception(
+          'Current directory does not contain package $packageName');
+    }
+
+    return cwd;
   }
-
-  final json = jsonDecode(configFile.readAsStringSync());
-  final packages = json['packages'] as List;
-
-  final pkg = packages.firstWhere(
-    (p) => p['name'] == packageName,
-    orElse: () => throw Exception('Package $packageName not found'),
-  );
-
-  final rootUri = pkg['rootUri'] as String;
-
-  // If rootUri is relative, resolve it relative to package_config.json
-  final packageConfigDir = configFile.parent; // .dart_tool
-  final dir =
-      Directory(path.normalize(path.join(packageConfigDir.path, rootUri)));
-  if (!dir.existsSync()) {
-    throw Exception('Resolved package root does not exist: ${dir.path}');
-  }
-
-  return dir;
 }
