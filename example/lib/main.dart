@@ -3,10 +3,7 @@ import 'package:super_qr_code_scanner/super_qr_code_scanner.dart';
 import 'package:image_picker/image_picker.dart';
 
 void main() {
-  // Enable logging for debugging
-  QRScannerLogger.setEnabled(true);
-  QRScannerLogger.setLevel(LogLevel.info);
-
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 

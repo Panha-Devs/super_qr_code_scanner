@@ -30,6 +30,7 @@ class SuperQRCodeScanner {
   void updateConfig(QRScannerConfig config) {
     _config = config;
     QRScannerLogger.setEnabled(config.enableLogging);
+    QRScannerLogger.setLevel(config.logLevel);
     QRScannerLogger.info('Configuration updated: $config');
   }
 

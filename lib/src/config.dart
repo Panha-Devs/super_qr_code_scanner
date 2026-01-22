@@ -1,3 +1,5 @@
+import 'logger.dart' show LogLevel;
+
 /// QR Scanner configuration options
 class QRScannerConfig {
   /// Maximum number of QR codes to detect in a single image
@@ -5,6 +7,9 @@ class QRScannerConfig {
 
   /// Whether to enable debug logging
   final bool enableLogging;
+
+  /// Logging level
+  final LogLevel logLevel;
 
   /// Timeout for scanning operations in milliseconds
   final int timeoutMs;
@@ -14,7 +19,8 @@ class QRScannerConfig {
 
   const QRScannerConfig({
     this.maxSymbols = 20,
-    this.enableLogging = false,
+    this.enableLogging = true,
+    this.logLevel = LogLevel.info,
     this.timeoutMs = 30000,
     this.tryHarder = true,
   });
@@ -39,12 +45,14 @@ class QRScannerConfig {
   QRScannerConfig copyWith({
     int? maxSymbols,
     bool? enableLogging,
+    LogLevel? logLevel,
     int? timeoutMs,
     bool? tryHarder,
   }) {
     return QRScannerConfig(
       maxSymbols: maxSymbols ?? this.maxSymbols,
       enableLogging: enableLogging ?? this.enableLogging,
+      logLevel: logLevel ?? this.logLevel,
       timeoutMs: timeoutMs ?? this.timeoutMs,
       tryHarder: tryHarder ?? this.tryHarder,
     );
@@ -53,6 +61,6 @@ class QRScannerConfig {
   @override
   String toString() {
     return 'QRScannerConfig(maxSymbols: $maxSymbols, enableLogging: $enableLogging, '
-        'timeoutMs: $timeoutMs, tryHarder: $tryHarder)';
+        'logLevel: $logLevel, timeoutMs: $timeoutMs, tryHarder: $tryHarder)';
   }
 }
