@@ -71,6 +71,10 @@ class SuperQRCodeScanner {
 
   /// Synchronous scan for use in compute isolate
   static List<QRCode> _scanImageFileSync(_ScanFileParams params) {
+    // Configure logger in isolate
+    QRScannerLogger.setEnabled(params.config.enableLogging);
+    QRScannerLogger.setLevel(params.config.logLevel);
+
     final bindings = QRScannerBindings.load();
     final resultPtr = bindings.scanImageFile(params.imagePath, params.config);
 
@@ -140,6 +144,10 @@ class SuperQRCodeScanner {
 
   /// Synchronous scan from bytes for use in compute isolate
   static List<QRCode> _scanImageBytesSync(_ScanBytesParams params) {
+    // Configure logger in isolate
+    QRScannerLogger.setEnabled(params.config.enableLogging);
+    QRScannerLogger.setLevel(params.config.logLevel);
+
     final bindings = QRScannerBindings.load();
     final dataPtr = malloc<ffi.Uint8>(params.imageData.length);
 
