@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'super_qr_code_scanner'
-  s.version          = '1.0.0'
+  s.version          = '1.0.6'
   s.summary          = 'High-performance QR code scanner using ZXing-C++ and OpenCV'
   s.description      = <<-DESC
 A Flutter plugin for scanning QR codes from images using native ZXing-C++ and OpenCV libraries.
@@ -27,9 +27,6 @@ A Flutter plugin for scanning QR codes from images using native ZXing-C++ and Op
 
   # including C++ library
   s.library = 'c++'
-
-  # # Set as a static lib
-  # s.static_framework = true
 
   # module_map is needed so this module can be used as a framework
   s.module_map = 'super_qr_code_scanner.modulemap'
