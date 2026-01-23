@@ -7,6 +7,7 @@
 #include <cstring>
 #include <future>
 #include <thread>
+#include <chrono>
 
 static int opencvErrorHandler(int status, const char* func_name, const char* err_msg, const char* file_name, int line, void* userdata) {
     // Suppress OpenCV errors to avoid log spam on Android
@@ -22,7 +23,7 @@ static struct OpenCVInitializer {
 } opencv_initializer;
 
 // Internal function to scan QR codes from cv::Mat
-static std::vector<ZXing::Barcode> scanQRCodesInternal(const cv::Mat& image) {
+static std::vector<ZXing::Barcode> scanQRCodesInternal(const cv::Mat& image, QRScannerConfig* config) {
     cv::Mat grayImage;
     if (image.channels() == 3 || image.channels() == 4) {
         cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
@@ -40,11 +41,11 @@ static std::vector<ZXing::Barcode> scanQRCodesInternal(const cv::Mat& image) {
         
         ZXing::ReaderOptions options;
         options.setFormats(ZXing::BarcodeFormat::Any);
-        options.setTryHarder(true);
+        options.setTryHarder(config ? config->try_harder : true);
         options.setTryRotate(true);
         options.setTryDownscale(true);
         options.setTryInvert(true);
-        options.setMaxNumberOfSymbols(20);
+        options.setMaxNumberOfSymbols(config ? config->max_symbols : 20);
         
         auto results = ZXing::ReadBarcodes(imageView, options);
         for (const auto& result : results) {
@@ -65,10 +66,10 @@ static std::vector<ZXing::Barcode> scanQRCodesInternal(const cv::Mat& image) {
         
         ZXing::ReaderOptions options;
         options.setFormats(ZXing::BarcodeFormat::Any);
-        options.setTryHarder(true);
+        options.setTryHarder(config ? config->try_harder : true);
         options.setTryRotate(true);
         options.setTryInvert(true);
-        options.setMaxNumberOfSymbols(20);
+        options.setMaxNumberOfSymbols(config ? config->max_symbols : 20);
         
         auto results = ZXing::ReadBarcodes(imageView, options);
         for (const auto& result : results) {
@@ -82,15 +83,15 @@ static std::vector<ZXing::Barcode> scanQRCodesInternal(const cv::Mat& image) {
     return allResults;
 }
 
-QRScanResult* qr_scan_image(const char* image_path) {
+QRScanResult* qr_scan_image(const char* image_path, QRScannerConfig* config) {
     // Run image loading and scanning in a worker thread
-    auto future = std::async(std::launch::async, [image_path]() -> QRScanResult* {
+    auto future = std::async(std::launch::async, [image_path, config]() -> QRScanResult* {
         cv::Mat image = cv::imread(image_path);
         if (image.empty()) {
             return nullptr;
         }
         
-        auto results = scanQRCodesInternal(image);
+        auto results = scanQRCodesInternal(image, config);
         
         QRScanResult* scanResult = new QRScanResult();
         scanResult->count = results.size();
@@ -118,13 +119,21 @@ QRScanResult* qr_scan_image(const char* image_path) {
         return scanResult;
     });
     
-    // Wait for the async task to complete and return the result
+    // Wait for the async task to complete with timeout
+    int timeout_ms = config ? config->timeout_ms : 30000;
+    auto status = future.wait_for(std::chrono::milliseconds(timeout_ms));
+    
+    if (status == std::future_status::timeout) {
+        // Timeout occurred, return null
+        return nullptr;
+    }
+    
     return future.get();
 }
 
-QRScanResult* qr_scan_bytes(const unsigned char* image_data, int width, int height, int channels) {
+QRScanResult* qr_scan_bytes(const unsigned char* image_data, int width, int height, int channels, QRScannerConfig* config) {
     // Run image processing and scanning in a worker thread
-    auto future = std::async(std::launch::async, [image_data, width, height, channels]() -> QRScanResult* {
+    auto future = std::async(std::launch::async, [image_data, width, height, channels, config]() -> QRScanResult* {
         cv::Mat image;
         
         if (channels == 1) {
@@ -137,7 +146,7 @@ QRScanResult* qr_scan_bytes(const unsigned char* image_data, int width, int heig
             return nullptr;
         }
         
-        auto results = scanQRCodesInternal(image);
+        auto results = scanQRCodesInternal(image, config);
         
         QRScanResult* scanResult = new QRScanResult();
         scanResult->count = results.size();
@@ -163,7 +172,15 @@ QRScanResult* qr_scan_bytes(const unsigned char* image_data, int width, int heig
         return scanResult;
     });
     
-    // Wait for the async task to complete and return the result
+    // Wait for the async task to complete with timeout
+    int timeout_ms = config ? config->timeout_ms : 30000;
+    auto status = future.wait_for(std::chrono::milliseconds(timeout_ms));
+    
+    if (status == std::future_status::timeout) {
+        // Timeout occurred, return null
+        return nullptr;
+    }
+    
     return future.get();
 }
 

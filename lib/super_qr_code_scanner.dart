@@ -48,7 +48,8 @@ class SuperQRCodeScanner {
       await QRScannerValidator.validateImagePath(imagePath);
 
       // Run in separate isolate to prevent UI freeze
-      final results = await compute(_scanImageFileSync, imagePath);
+      final params = _ScanFileParams(imagePath, _config);
+      final results = await compute(_scanImageFileSync, params);
 
       stopwatch.stop();
       QRScannerLogger.info(
@@ -69,9 +70,9 @@ class SuperQRCodeScanner {
   }
 
   /// Synchronous scan for use in compute isolate
-  static List<QRCode> _scanImageFileSync(String imagePath) {
+  static List<QRCode> _scanImageFileSync(_ScanFileParams params) {
     final bindings = QRScannerBindings.load();
-    final resultPtr = bindings.scanImageFile(imagePath);
+    final resultPtr = bindings.scanImageFile(params.imagePath, params.config);
 
     if (resultPtr == ffi.nullptr) {
       return [];
@@ -110,7 +111,13 @@ class SuperQRCodeScanner {
       );
 
       // Run in separate isolate to prevent UI freeze
-      final params = _ScanBytesParams(imageData, width, height, channels);
+      final params = _ScanBytesParams(
+        imageData,
+        width,
+        height,
+        channels,
+        _config,
+      );
       final results = await compute(_scanImageBytesSync, params);
 
       stopwatch.stop();
@@ -145,6 +152,7 @@ class SuperQRCodeScanner {
         params.width,
         params.height,
         params.channels,
+        params.config,
       );
 
       if (resultPtr == ffi.nullptr) {
@@ -206,6 +214,21 @@ class _ScanBytesParams {
   final int width;
   final int height;
   final int channels;
+  final QRScannerConfig config;
 
-  _ScanBytesParams(this.imageData, this.width, this.height, this.channels);
+  _ScanBytesParams(
+    this.imageData,
+    this.width,
+    this.height,
+    this.channels,
+    this.config,
+  );
+}
+
+/// Helper class to pass file path and config to compute
+class _ScanFileParams {
+  final String imagePath;
+  final QRScannerConfig config;
+
+  _ScanFileParams(this.imagePath, this.config);
 }

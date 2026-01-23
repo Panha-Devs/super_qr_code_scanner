@@ -79,3 +79,15 @@ final class QRScanResult extends ffi.Struct {
   @ffi.Int()
   external int count;
 }
+
+/// Native config structure matching C++
+final class QRScannerConfigNative extends ffi.Struct {
+  @ffi.Int32()
+  external int max_symbols;
+
+  @ffi.Int32()
+  external int timeout_ms;
+
+  @ffi.Int32()
+  external int try_harder;
+}

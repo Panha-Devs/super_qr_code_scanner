@@ -23,11 +23,18 @@ typedef struct {
     int count;
 } QRScanResult;
 
+// Configuration for QR scanner
+typedef struct {
+    int max_symbols;
+    int timeout_ms;
+    int try_harder; // 1 = true, 0 = false
+} QRScannerConfig;
+
 // Scan QR codes from image file path
-SUPER_QR_SCANNER_EXPORT QRScanResult* qr_scan_image(const char* image_path);
+SUPER_QR_SCANNER_EXPORT QRScanResult* qr_scan_image(const char* image_path, QRScannerConfig* config);
 
 // Scan QR codes from image bytes
-SUPER_QR_SCANNER_EXPORT QRScanResult* qr_scan_bytes(const unsigned char* image_data, int width, int height, int channels);
+SUPER_QR_SCANNER_EXPORT QRScanResult* qr_scan_bytes(const unsigned char* image_data, int width, int height, int channels, QRScannerConfig* config);
 
 // Free scan result memory
 SUPER_QR_SCANNER_EXPORT void qr_free_result(QRScanResult* result);

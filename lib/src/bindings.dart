@@ -4,23 +4,36 @@ import 'package:ffi/ffi.dart';
 
 import 'exceptions.dart';
 import 'models.dart';
+import 'config.dart';
 
 /// Native function type definitions
 typedef QRScanImageNative = ffi.Pointer<QRScanResult> Function(
-    ffi.Pointer<ffi.Char> imagePath);
+  ffi.Pointer<ffi.Char> imagePath,
+  ffi.Pointer<QRScannerConfigNative> config,
+);
 typedef QRScanImageDart = ffi.Pointer<QRScanResult> Function(
-    ffi.Pointer<ffi.Char> imagePath);
+  ffi.Pointer<ffi.Char> imagePath,
+  ffi.Pointer<QRScannerConfigNative> config,
+);
 
 typedef QRScanBytesNative = ffi.Pointer<QRScanResult> Function(
-    ffi.Pointer<ffi.Uint8> imageData,
-    ffi.Int width,
-    ffi.Int height,
-    ffi.Int channels);
+  ffi.Pointer<ffi.Uint8> imageData,
+  ffi.Int width,
+  ffi.Int height,
+  ffi.Int channels,
+  ffi.Pointer<QRScannerConfigNative> config,
+);
 typedef QRScanBytesDart = ffi.Pointer<QRScanResult> Function(
-    ffi.Pointer<ffi.Uint8> imageData, int width, int height, int channels);
+  ffi.Pointer<ffi.Uint8> imageData,
+  int width,
+  int height,
+  int channels,
+  ffi.Pointer<QRScannerConfigNative> config,
+);
 
 typedef QRFreeResultNative = ffi.Void Function(
-    ffi.Pointer<QRScanResult> result);
+  ffi.Pointer<QRScanResult> result,
+);
 typedef QRFreeResultDart = void Function(ffi.Pointer<QRScanResult> result);
 
 /// Low-level FFI bindings to the native QR scanner library
@@ -71,14 +84,19 @@ class QRScannerBindings {
   bool get isInitialized => _initialized;
 
   /// Scan QR codes from an image file path
-  ffi.Pointer<QRScanResult> scanImageFile(String imagePath) {
+  ffi.Pointer<QRScanResult> scanImageFile(
+    String imagePath,
+    QRScannerConfig config,
+  ) {
     _ensureInitialized();
-    
+
     final pathPtr = imagePath.toNativeUtf8();
+    final configPtr = _createConfigPtr(config);
     try {
-      return _scanImage(pathPtr.cast());
+      return _scanImage(pathPtr.cast(), configPtr);
     } finally {
       malloc.free(pathPtr);
+      malloc.free(configPtr);
     }
   }
 
@@ -88,9 +106,15 @@ class QRScannerBindings {
     int width,
     int height,
     int channels,
+    QRScannerConfig config,
   ) {
     _ensureInitialized();
-    return _scanBytes(imageData, width, height, channels);
+    final configPtr = _createConfigPtr(config);
+    try {
+      return _scanBytes(imageData, width, height, channels, configPtr);
+    } finally {
+      malloc.free(configPtr);
+    }
   }
 
   /// Free the memory allocated for a scan result
@@ -100,15 +124,24 @@ class QRScannerBindings {
     }
   }
 
+  /// Create a native config pointer from Dart config
+  ffi.Pointer<QRScannerConfigNative> _createConfigPtr(QRScannerConfig config) {
+    final configPtr = malloc<QRScannerConfigNative>();
+    configPtr.ref.max_symbols = config.maxSymbols;
+    configPtr.ref.timeout_ms = config.timeoutMs;
+    configPtr.ref.try_harder = config.tryHarder ? 1 : 0;
+    return configPtr;
+  }
+
   void _ensureInitialized() {
     if (!_initialized) {
       throw QRScannerException('Native library not properly initialized');
     }
   }
 
-  static ffi.DynamicLibrary _loadLibrary() {   
+  static ffi.DynamicLibrary _loadLibrary() {
     final libraryNames = _getLibraryNames();
-    
+
     for (final name in libraryNames) {
       try {
         if (Platform.isIOS) {
