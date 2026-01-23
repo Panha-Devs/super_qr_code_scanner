@@ -1,6 +1,7 @@
 import 'dart:ffi' as ffi;
 import 'dart:io';
 import 'package:ffi/ffi.dart';
+import 'package:super_qr_code_scanner/src/logger.dart';
 
 import 'exceptions.dart';
 import 'models.dart';
@@ -58,6 +59,9 @@ class QRScannerBindings {
           .asFunction();
       _initialized = true;
     } catch (e, stackTrace) {
+      QRScannerLogger.error(
+        'Failed to get native function pointers from library',
+      );
       throw LibraryLoadException(
         'Failed to load native functions',
         details: e.toString(),

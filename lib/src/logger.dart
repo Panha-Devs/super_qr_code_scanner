@@ -1,3 +1,6 @@
+import 'dart:developer';
+import 'dart:io';
+
 /// Logging level for the QR scanner
 enum LogLevel {
   debug,
@@ -56,14 +59,23 @@ class QRScannerLogger {
     final levelStr = level.name.toUpperCase().padRight(7);
     final prefix = '[$timestamp] [$levelStr] QRScanner:';
 
-    print('$prefix $message');
+    _logger('$prefix $message');
 
     if (error != null) {
-      print('$prefix Error: $error');
+      _logger('$prefix Error: $error');
     }
 
     if (stackTrace != null) {
-      print('$prefix StackTrace:\n$stackTrace');
+      _logger('$prefix StackTrace:\n$stackTrace');
     }
+  }
+
+  static void _logger(String message) {
+    if (Platform.isAndroid) {
+      print(message);
+      return;
+    }
+
+    log(message);
   }
 }
