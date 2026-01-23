@@ -45,7 +45,7 @@ void main(List<String> args) async {
     }
   }
 
-  print('Setup complete!');
+  print('✅ Setup abis native libs complete!');
 }
 
 List<String> getABIs(String platform) {

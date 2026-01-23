@@ -20,7 +20,7 @@ class QRScannerConfig {
   const QRScannerConfig({
     this.maxSymbols = 20,
     this.enableLogging = true,
-    this.logLevel = LogLevel.info,
+    this.logLevel = LogLevel.debug,
     this.timeoutMs = 30000,
     this.tryHarder = true,
   });
