@@ -53,15 +53,15 @@ class QRScannerLogger {
     }
 
     final timestamp = DateTime.now().toIso8601String();
-    final levelStr = level.name.toUpperCase();
+    final levelStr = level.name.toUpperCase().padRight(7);
     final prefix = '[$timestamp] [$levelStr] QRScanner:';
 
     print('$prefix $message');
-    
+
     if (error != null) {
       print('$prefix Error: $error');
     }
-    
+
     if (stackTrace != null) {
       print('$prefix StackTrace:\n$stackTrace');
     }
