@@ -8,7 +8,7 @@ extern "C" {
 #if defined(_WIN32)
 #define SUPER_QR_SCANNER_EXPORT __declspec(dllexport)
 #else
-#define SUPER_QR_SCANNER_EXPORT __attribute__((visibility("default")))
+#define SUPER_QR_SCANNER_EXPORT __attribute__((used)) __attribute__((visibility("default")))
 #endif
 
 // Result structure for QR codes

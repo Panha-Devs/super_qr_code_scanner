@@ -78,9 +78,13 @@ include_directories(
 )
 
 # =========================
-# Create Shared Library
+# Create Library
 # =========================
-add_library(${PROJECT_NAME} SHARED ${SOURCES})
+if(IOS OR APPLE)
+    add_library(${PROJECT_NAME} STATIC ${SOURCES})
+else()
+    add_library(${PROJECT_NAME} SHARED ${SOURCES})
+endif()
 
 # Add compile definitions to disable OpenCV plugin loading
 target_compile_definitions(${PROJECT_NAME} PRIVATE 
@@ -95,7 +99,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 if(ANDROID)
     file(GLOB OPENCV_LIBS "${OPENCV_LIB_DIR}/libopencv_*.so")
 elseif(IOS OR APPLE)
-    file(GLOB OPENCV_LIBS "${OPENCV_LIB_DIR}/libopencv_*.dylib" "${OPENCV_LIB_DIR}/libopencv_*.a")
+    file(GLOB OPENCV_LIBS "${OPENCV_LIB_DIR}/libopencv_*.a")
 elseif(WIN32)
     file(GLOB OPENCV_LIBS "${OPENCV_LIB_DIR}/opencv_*.lib")
 else()

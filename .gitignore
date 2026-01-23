@@ -120,3 +120,8 @@ ehthumbs.db
 # Download artifacts libs
 /src/opencv/libs/
 /src/zxing/libs/
+
+# Your CMake temporary build folder
+build/
+src/build/
+ios/libs/
