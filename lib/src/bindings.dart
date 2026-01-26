@@ -131,9 +131,9 @@ class QRScannerBindings {
   /// Create a native config pointer from Dart config
   ffi.Pointer<QRScannerConfigNative> _createConfigPtr(QRScannerConfig config) {
     final configPtr = malloc<QRScannerConfigNative>();
-    configPtr.ref.max_symbols = config.maxSymbols;
-    configPtr.ref.timeout_ms = config.timeoutMs;
-    configPtr.ref.try_harder = config.tryHarder ? 1 : 0;
+    configPtr.ref.maxSymbols = config.maxSymbols;
+    configPtr.ref.timeoutMs = config.timeoutMs;
+    configPtr.ref.tryHarder = config.tryHarder ? 1 : 0;
     return configPtr;
   }
 

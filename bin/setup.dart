@@ -33,7 +33,7 @@ void main(List<String> args) async {
   final releaseTag = results['version'] as String;
 
   print(
-    'Setting up Super QR Code Scanner v$releaseTag for platforms: $platforms',
+    'Setting up Super QR Code Scanner $releaseTag for platforms: $platforms',
   );
 
   final pluginDir = findPackageRoot(packageName);
