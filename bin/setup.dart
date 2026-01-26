@@ -9,7 +9,6 @@ import 'package:args/args.dart';
 
 const String repoOwner = 'Panha-Devs';
 const String repoName = 'super_qr_code_scanner_artifacts';
-const String releaseTag = 'v1.0.0';
 const String packageName = 'super_qr_code_scanner';
 
 void main(List<String> args) async {
@@ -20,19 +19,40 @@ void main(List<String> args) async {
       help:
           'Comma-separated list of platforms: android,ios,macos,linux,windows',
       defaultsTo: 'android,ios',
+    )
+    ..addOption(
+      'version',
+      abbr: 'v',
+      help: 'Release version tag to download artifacts from',
+      defaultsTo: 'v1.0.1',
     );
 
   final results = parser.parse(args);
   final platforms =
       results['platforms'].split(',').map((p) => p.trim()).toList();
+  final releaseTag = results['version'] as String;
 
-  print('Setting up Super QR Code Scanner for platforms: $platforms');
+  print(
+    'Setting up Super QR Code Scanner v$releaseTag for platforms: $platforms',
+  );
 
   final pluginDir = findPackageRoot(packageName);
-  final openCvLibsDir =
-      Directory(path.join(pluginDir.path, 'src', 'opencv', 'libs'));
-  final zXingLibsDir =
-      Directory(path.join(pluginDir.path, 'src', 'zxing', 'libs'));
+  final openCvLibsDir = Directory(
+    path.join(
+      pluginDir.path,
+      'src',
+      'opencv',
+      'libs',
+    ),
+  );
+  final zXingLibsDir = Directory(
+    path.join(
+      pluginDir.path,
+      'src',
+      'zxing',
+      'libs',
+    ),
+  );
 
   await openCvLibsDir.create(recursive: true);
   await zXingLibsDir.create(recursive: true);
@@ -40,8 +60,20 @@ void main(List<String> args) async {
   for (final platform in platforms) {
     final abis = getABIs(platform);
     for (final abi in abis) {
-      await downloadAndExtract('opencv', platform, abi, openCvLibsDir);
-      await downloadAndExtract('zxing', platform, abi, zXingLibsDir);
+      await downloadAndExtract(
+        'opencv',
+        platform,
+        abi,
+        openCvLibsDir,
+        releaseTag,
+      );
+      await downloadAndExtract(
+        'zxing',
+        platform,
+        abi,
+        zXingLibsDir,
+        releaseTag,
+      );
     }
   }
 
@@ -70,6 +102,7 @@ Future<void> downloadAndExtract(
   String platform,
   String abi,
   Directory libsDir,
+  String releaseTag,
 ) async {
   final assetName = '$lib-$platform-$abi.zip';
   final extractDir = Directory(path.join(libsDir.path, '$platform-$abi'));

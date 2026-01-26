@@ -61,11 +61,39 @@ dart run super_qr_code_scanner:setup --platforms android,ios
 
 # For all platforms
 dart run super_qr_code_scanner:setup --platforms android,ios,macos,linux,windows
+
+# Specify a specific version (if needed)
+dart run super_qr_code_scanner:setup --version v1.0.1
+
+# Combine platforms and version
+dart run super_qr_code_scanner:setup --platforms android,ios --version v1.0.1
 ```
 
 This downloads OpenCV and ZXing libraries from our public GitHub releases and places them in the plugin's native directories. The setup is safe to run multiple times - it skips downloads if libraries are already present.
 
 **Note:** Libraries are hosted at [Panha-Devs/super_qr_code_scanner_artifacts](https://github.com/Panha-Devs/super_qr_code_scanner_artifacts).
+
+## Development Setup
+
+For developers contributing to or building this plugin from source, additional tools are required for iOS and macOS platforms:
+
+### iOS Development Requirements
+- **Xcode**: Latest version with Command Line Tools (`xcode-select --install`)
+- **CMake**: Install via Homebrew: `brew install cmake`
+- **Flutter SDK**: Follow [official installation guide](https://flutter.dev/docs/get-started/install/macos)
+
+The iOS build process uses:
+- `libtool` (included with Xcode) for combining static libraries
+- `lipo` (included with Xcode) for creating universal binaries
+- CMake for cross-compiling native C++ code
+
+### macOS Development Requirements
+- **Xcode**: Latest version with Command Line Tools
+- **CMake**: Install via Homebrew: `brew install cmake`
+- **Flutter SDK**: Follow [official installation guide](https://flutter.dev/docs/get-started/install/macos)
+
+### Building Native Libraries
+The native iOS libraries are built automatically when running `flutter build ios` or `flutter run ios`. The build process uses the `prepare-ios-lib.sh` script to compile and combine the required OpenCV and ZXing libraries.
 
 ## Quick Start
 

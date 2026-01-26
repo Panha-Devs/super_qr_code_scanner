@@ -90,10 +90,10 @@ if [ ${#LIBS[@]} -eq 0 ]; then
     exit 1
 fi
 
-# =========================
-# Create fat library
-# =========================
 echo "⚡ Creating fat library for iOS..."
 lipo -create "${LIBS[@]}" -output "$IOS_LIB_DIR/libsuper_qr_code_scanner.a"
 
 echo "✅ Fat library created at: $IOS_LIB_DIR/libsuper_qr_code_scanner.a"
+
+# Clean up intermediate combined libraries
+rm -f "${LIBS[@]}"
