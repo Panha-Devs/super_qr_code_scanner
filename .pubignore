@@ -24,6 +24,7 @@ src/zxing/libs/
 
 # Exclude native libs on ios
 ios/libs
+macos/libs
 
 # Exclude Xcode project files (generated)
 *.xcodeproj/

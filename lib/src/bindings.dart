@@ -148,8 +148,8 @@ class QRScannerBindings {
 
     for (final name in libraryNames) {
       try {
-        if (Platform.isIOS) {
-          // iOS uses static linking, all symbols are in the process
+        if (Platform.isIOS || Platform.isMacOS) {
+          // iOS and macOS use static linking, all symbols are in the process
           return ffi.DynamicLibrary.process();
         } else {
           return ffi.DynamicLibrary.open(name);
@@ -173,10 +173,8 @@ class QRScannerBindings {
       // iOS FFI plugin uses DynamicLibrary.process() for static linking
       return ['super_qr_code_scanner'];
     } else if (Platform.isMacOS) {
-      return [
-        'libsuper_qr_code_scanner.dylib',
-        'Frameworks/libsuper_qr_code_scanner.dylib',
-      ];
+      // macOS FFI plugin uses DynamicLibrary.process() for static linking
+      return ['super_qr_code_scanner'];
     } else if (Platform.isLinux) {
       return [
         'libsuper_qr_code_scanner.so',

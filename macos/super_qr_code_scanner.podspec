@@ -22,11 +22,26 @@ A Flutter plugin for scanning QR codes from images using native ZXing-C++ and Op
 
   s.xcconfig = {
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20',
+    'OTHER_LDFLAGS' => '-force_load ${PODS_ROOT}/../Flutter/ephemeral/.symlinks/plugins/super_qr_code_scanner/macos/libs/libsuper_qr_code_scanner.a'
   }
 
+  s.framework = 'Accelerate'
   s.library = 'c++'
+  s.library = 'z'
 
-  # For FFI plugins, the native library is built by CMake
-  # No additional source files needed in podspec
+  # --------------------------
+  # Prepare command: build native static lib
+  # --------------------------
+  s.prepare_command = <<-CMD
+    cd ../src
+    echo "Starting build super_qr_code_scanner static from script: ${PWD}"
+    FORCE_FLAG=${FORCE_BUILD:-"force"}
+    sh ../script/prepare-macos-lib.sh $FORCE_FLAG
+  CMD
+
+  # --------------------------
+  # Vendored static library
+  # --------------------------
+  s.vendored_library = 'libs/libsuper_qr_code_scanner.a'
 
 end

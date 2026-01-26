@@ -93,7 +93,7 @@ The iOS build process uses:
 - **Flutter SDK**: Follow [official installation guide](https://flutter.dev/docs/get-started/install/macos)
 
 ### Building Native Libraries
-The native iOS libraries are built automatically when running `flutter build ios` or `flutter run ios`. The build process uses the `prepare-ios-lib.sh` script to compile and combine the required OpenCV and ZXing libraries.
+The native iOS and macOS libraries are built automatically when running `flutter build ios`, `flutter run ios`, `flutter build macos`, or `flutter run macos`. The build process uses platform-specific scripts (`prepare-ios-lib.sh` for iOS, `prepare-macos-lib.sh` for macOS) to compile and combine the required OpenCV and ZXing libraries for each platform.
 
 ## Quick Start
 
