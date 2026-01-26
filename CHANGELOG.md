@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [1.0.9]
+- Fixed setup on macos
+- Add example for macos
+- Bug fixes, small improvements
+
 ## [1.0.8]
 - Bug fixes, small improvements
 
