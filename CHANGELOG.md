@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [1.0.7]
+- Fixed error when launch on ios
+- Update script to build ios native lib
+- Update readme info for setup development
+- Add version when call setup script
+
 ## [1.0.6]
 - Fix setup script to properly handle both relative and absolute rootUri paths in package_config.json
 
