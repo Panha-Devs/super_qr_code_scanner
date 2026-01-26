@@ -96,6 +96,8 @@ example/.flutter-plugins
 example/.flutter-plugins-dependencies
 example/build/
 example/ios/Pods/
+example/ios/*.xcodeproj/
+example/ios/*.xcworkspace/
 example/android/build/
 example/android/.gradle/
 example/android/local.properties

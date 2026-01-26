@@ -21,3 +21,12 @@ example/pubspec.lock
 # Exclude downloaded native libraries (users download via setup script)
 src/opencv/libs/
 src/zxing/libs/
+
+# Exclude native libs on ios
+ios/libs
+
+# Exclude Xcode project files (generated)
+*.xcodeproj/
+*.xcworkspace/
+example/ios/*.xcodeproj/
+example/ios/*.xcworkspace/
