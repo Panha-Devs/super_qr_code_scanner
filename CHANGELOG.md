@@ -1,5 +1,9 @@
 # CHANGELOG
 
+
+## [1.0.8]
+- Bug fixes, small improvements
+
 ## [1.0.7]
 - Fixed error when launch on ios
 - Update script to build ios native lib
