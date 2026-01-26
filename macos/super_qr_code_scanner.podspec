@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'super_qr_code_scanner'
-  s.version          = '1.0.9'
+  s.version          = '1.0.8'
   s.summary          = 'High-performance QR code scanner using ZXing-C++ and OpenCV'
   s.description      = <<-DESC
 A Flutter plugin for scanning QR codes from images using native ZXing-C++ and OpenCV libraries.

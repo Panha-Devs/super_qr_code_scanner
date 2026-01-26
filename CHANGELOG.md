@@ -1,8 +1,5 @@
 # CHANGELOG
 
-## [1.0.9]
-- Bug fixes, small improvements
-
 ## [1.0.8]
 - Bug fixes, small improvements
 
