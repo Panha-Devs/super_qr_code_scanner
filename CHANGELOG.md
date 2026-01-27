@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [1.0.10]
+- Fixed window config to run with flutter window
+- Update script to download latest artifacts
+- Bugs fix
+- Small improvements
+- Add window example
+
 ## [1.0.9]
 - Fixed setup on macos
 - Add example for macos

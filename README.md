@@ -26,7 +26,7 @@ A robust Flutter FFI plugin for scanning QR codes from images using OpenCV and Z
 | **iOS** | iOS 12.0+ | ✅ Tested | arm64, x86_64 (simulator) |
 | **macOS** | macOS 10.14+ | ✅ Tested | arm64 (Apple Silicon), x86_64 (Intel) |
 | **Linux** | Ubuntu 18.04+ | ⚠️ Experimental | x64 |
-| **Windows** | Windows 10+ | ⚠️ Experimental | x64 |
+| **Windows** | Windows 10+ | ✅ Tested | x64 |
 
 **Notes:**
 - Android and iOS are fully tested and production-ready
