@@ -149,11 +149,59 @@ if(IOS OR APPLE)
     )
 endif()
 
+if(WIN32)
+    # Suppress strcpy warnings
+    target_compile_definitions(${PROJECT_NAME} PRIVATE 
+        _CRT_SECURE_NO_WARNINGS
+        NDEBUG
+    )
+
+    # Force MSVC to use Release runtime even in Debug
+    foreach(flag_var
+        CMAKE_C_FLAGS_DEBUG
+        CMAKE_CXX_FLAGS_DEBUG
+    )
+        if(${flag_var} MATCHES "/MDd")
+            string(REPLACE "/MDd" "/MD" ${flag_var} "${${flag_var}}")
+        endif()
+    endforeach()
+
+    # DLLs to copy
+    file(GLOB OPENCV_DLLS "${OPENCV_LIB_DIR}/*.dll")
+    set(PLUGIN_DLLS ${OPENCV_DLLS})
+
+    if(EXISTS "${ZXING_LIB_DIR}/ZXing.dll")
+        list(APPEND PLUGIN_DLLS "${ZXING_LIB_DIR}/ZXing.dll")
+    endif()
+
+    # Compute Flutter runner folder: build/windows/x64/runner/<CONFIG>
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(ARCH_FOLDER "x64")
+    else()
+        set(ARCH_FOLDER "x86")
+    endif()
+
+    set(RUNNER_DIR "${CMAKE_BINARY_DIR}/../${ARCH_FOLDER}/runner/$<CONFIG>")
+    message(STATUS "DLLs will be copied to: ${RUNNER_DIR}")
+
+    foreach(dll ${PLUGIN_DLLS})
+        get_filename_component(DLL_NAME ${dll} NAME)
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${dll}"
+            "${RUNNER_DIR}/${DLL_NAME}"
+            COMMENT "Copying ${DLL_NAME} to Flutter runner folder"
+        )
+    endforeach()
+endif()
+
 # =========================
-# Install
+# Install (skip for Windows)
 # =========================
-install(TARGETS ${PROJECT_NAME}
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-)
+if(NOT WIN32)
+    install(TARGETS ${PROJECT_NAME}
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+    )
+endif()
