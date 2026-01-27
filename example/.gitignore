@@ -101,6 +101,25 @@ app.*.map.json
 **/macos/Runner/GeneratedPluginRegistrant.*
 **/macos/Podfile.lock
 
+# Windows related
+**/windows/**/*.exe
+**/windows/**/*.dll
+**/windows/**/*.lib
+**/windows/**/GeneratedPluginRegistrant.*
+**/windows/**/*.vcxproj.filters
+**/windows/**/*.vcxproj.user
+**/windows/**/.vs/
+**/windows/**/flutter/ephemeral/
+**/windows/**/flutter/generated_plugin_registrant.*
+**/windows/**/flutter/generated_plugins.cmake
+
+# Linux related
+**/linux/**/*.so
+**/linux/**/GeneratedPluginRegistrant.*
+**/linux/**/flutter/ephemeral/
+**/linux/**/flutter/generated_plugin_registrant.*
+**/linux/**/flutter/generated_plugins.cmake
+
 # Exceptions to above rules.
 !**/ios/**/default.mode1v3
 !**/ios/**/default.mode2v3
