@@ -53,6 +53,9 @@ flutter pub get
 To reduce package size, native libraries are not bundled. Run the setup command to download libraries for your target platforms:
 
 ```bash
+#For android development it will cached native build directory that will cause error after update plugin, so you can use this command to clean it
+dart run super_qr_code_scanner:cleanup
+
 # For Android and iOS (default - recommended for most apps)
 dart run super_qr_code_scanner:setup
 
@@ -69,7 +72,7 @@ dart run super_qr_code_scanner:setup --version v1.0.1
 dart run super_qr_code_scanner:setup --platforms android,ios --version v1.0.1
 ```
 
-This downloads OpenCV and ZXing libraries from our public GitHub releases and places them in the plugin's native directories. The setup is safe to run multiple times - it skips downloads if libraries are already present.
+This downloads OpenCV and ZXing libraries from our public GitHub releases and places them in the plugin's native directories. The setup is safe to run multiple times - it will remove old directory downloads if libraries are already present to make sure it will run fresh new. You should run this only one time after update plugin
 
 **Note:** Libraries are hosted at [Panha-Devs/super_qr_code_scanner_artifacts](https://github.com/Panha-Devs/super_qr_code_scanner_artifacts).
 
@@ -264,11 +267,7 @@ scanner.updateConfig(QRScannerConfig(
 ## Debug Logging
 
 ```dart
-// Enable logging in main()
 void main() {
-  QRScannerLogger.setEnabled(true);
-  QRScannerLogger.setLevel(LogLevel.debug);  // debug, info, warning, error
-  
   runApp(MyApp());
 }
 
@@ -499,27 +498,8 @@ See the [example app](example/) for a complete working implementation with image
 
 ## Troubleshooting
 
-### Android build errors with .cxx directory
-
-If you encounter build errors related to CMake or native compilation, try removing the `.cxx` directory:
-
-```bash
-cd android
-rm -rf .cxx
-cd ..
-flutter clean
-flutter pub get
-```
-
 This directory contains cached CMake build artifacts that may become corrupted.
 
-### Library not found error
-
-```dart
-// Enable logging to see detailed error messages
-QRScannerLogger.setEnabled(true);
-QRScannerLogger.setLevel(LogLevel.debug);
-```
 
 ### No QR codes detected
 

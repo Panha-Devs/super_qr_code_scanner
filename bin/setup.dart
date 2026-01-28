@@ -33,7 +33,7 @@ void main(List<String> args) async {
   final releaseTag = results['version'] as String;
 
   print(
-    'Setting up Super QR Code Scanner $releaseTag for platforms: $platforms',
+    '🚀 Setting up Super QR Code Scanner $releaseTag for platforms: $platforms',
   );
 
   final pluginDir = findPackageRoot(packageName);
@@ -77,7 +77,7 @@ void main(List<String> args) async {
     }
   }
 
-  print('✅ Setup abis native libs complete!');
+  print('🎉 Setup abis native libs complete!');
 }
 
 List<String> getABIs(String platform) {
@@ -110,13 +110,13 @@ Future<void> downloadAndExtract(
   // Remove existing directory to ensure fresh download
   if (await extractDir.exists()) {
     await extractDir.delete(recursive: true);
-    print('Removed existing $lib libs for $platform-$abi');
+    print('🗑️ Removed existing $lib libs for $platform-$abi');
   }
 
   final url =
       'https://github.com/$repoOwner/$repoName/releases/download/$releaseTag/$assetName';
 
-  print('Downloading $assetName...');
+  print('⬇️ Downloading $assetName...');
 
   final response = await http.get(Uri.parse(url));
   if (response.statusCode != 200) {
@@ -144,7 +144,7 @@ Future<void> downloadAndExtract(
     }
   }
 
-  print('✅ Extracted $assetName to ${extractDir.absolute.path}');
+  print('📦 Extracted $assetName to ${extractDir.absolute.path}');
 }
 
 Directory findPackageRoot(String packageName) {
@@ -163,12 +163,12 @@ Directory findPackageRoot(String packageName) {
   Directory dir;
 
   if (rootUri.startsWith('file://')) {
-    print('Detected absolute rootUri: $rootUri for published package.');
+    print('📦 Detected absolute rootUri: $rootUri for published package.');
     // Absolute URI - convert to file path
     final uri = Uri.parse(rootUri);
     dir = Directory(uri.toFilePath());
   } else {
-    print('Detected relative rootUri: $rootUri for development path.');
+    print('🏠 Detected relative rootUri: $rootUri for development path.');
     // Relative URI - resolve relative to .dart_tool
     dir = Directory(path.normalize(path.join(packageConfigDir.path, rootUri)));
   }

@@ -25,6 +25,7 @@ dev_dependencies:
 
 executables:
   setup: setup
+  cleanup: cleanup
 
 flutter:
   plugin:

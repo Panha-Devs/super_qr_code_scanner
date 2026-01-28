@@ -1,4 +1,6 @@
 # CHANGELOG
+## [1.0.11]
+- Add new script for cleanup android .cxx directory
 
 ## [1.0.10]
 - Fixed window config to run with flutter window
