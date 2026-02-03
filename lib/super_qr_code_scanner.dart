@@ -11,6 +11,7 @@ import 'src/logger.dart';
 
 export 'src/models.dart' show QRCode, QRCodePosition;
 export 'src/exceptions.dart';
+export 'src/extension.dart' show QrCodeListExtension;
 export 'src/config.dart';
 export 'src/logger.dart' show LogLevel, QRScannerLogger;
 
