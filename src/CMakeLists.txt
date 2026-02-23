@@ -69,6 +69,7 @@ set(ZXING_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zxing/include)
 set(ZXING_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zxing/libs/${PLATFORM}-${ABI})
 
 option(MACOS_BUILD_FRAMEWORK "Build macOS framework for SwiftPM" OFF)
+option(IOS_BUILD_FRAMEWORK "Build iOS framework for SwiftPM" OFF)
 
 # =========================
 # Include Directories
@@ -85,6 +86,19 @@ include_directories(
 if(IOS OR APPLE)
     if(APPLE AND MACOS_BUILD_FRAMEWORK)
         message(STATUS "🍎 macOS Framework build ENABLED (SwiftPM mode)")
+        add_library(${PROJECT_NAME} SHARED ${SOURCES})
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            FRAMEWORK TRUE
+            FRAMEWORK_VERSION A
+            MACOSX_FRAMEWORK_IDENTIFIER com.panha.${PROJECT_NAME}
+            PUBLIC_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/super_qr_code_scanner_api.h"
+            XCODE_ATTRIBUTE_DEFINES_MODULE YES
+            XCODE_ATTRIBUTE_INSTALL_PATH "@rpath"
+            XCODE_ATTRIBUTE_SKIP_INSTALL NO
+            BUILD_WITH_INSTALL_RPATH YES
+        )
+    elseif(IOS AND IOS_BUILD_FRAMEWORK)
+        message(STATUS "📱 iOS Framework build ENABLED (SwiftPM mode)")
         add_library(${PROJECT_NAME} SHARED ${SOURCES})
         set_target_properties(${PROJECT_NAME} PROPERTIES
             FRAMEWORK TRUE
@@ -125,14 +139,12 @@ else()
 endif()
 
 # OpenCV 3rd-party dependencies (IMPORTANT)
-if(MACOS_BUILD_FRAMEWORK)
-    if(IOS OR APPLE)
-        file(GLOB OPENCV_3RDPARTY_LIBS
-            "${OPENCV_LIB_DIR}/liblibjpeg*.a"
-            "${OPENCV_LIB_DIR}/liblibpng*.a"
-            "${OPENCV_LIB_DIR}/libzlib*.a"
-        )
-    endif()
+if((IOS AND IOS_BUILD_FRAMEWORK) OR (APPLE AND MACOS_BUILD_FRAMEWORK))
+    file(GLOB OPENCV_3RDPARTY_LIBS
+        "${OPENCV_LIB_DIR}/liblibjpeg*.a"
+        "${OPENCV_LIB_DIR}/liblibpng*.a"
+        "${OPENCV_LIB_DIR}/libzlib*.a"
+    )
 endif()
 
 # Find ZXing library
@@ -148,11 +160,11 @@ endif()
 
 message(STATUS "OpenCV libraries: ${OPENCV_LIBS}")
 message(STATUS "ZXing library: ${ZXING_LIB}")
-if(MACOS_BUILD_FRAMEWORK)
+if((IOS AND IOS_BUILD_FRAMEWORK) OR (APPLE AND MACOS_BUILD_FRAMEWORK))
     message(STATUS "OpenCV 3rd-party libs: ${OPENCV_3RDPARTY_LIBS}")
 endif()
 
-if(MACOS_BUILD_FRAMEWORK)
+if((IOS AND IOS_BUILD_FRAMEWORK) OR (APPLE AND MACOS_BUILD_FRAMEWORK))
     target_link_libraries(${PROJECT_NAME}
         ${OPENCV_LIBS}
         ${OPENCV_3RDPARTY_LIBS}
@@ -238,7 +250,7 @@ if(WIN32)
 endif()
 
 if(NOT WIN32)
-    if(APPLE AND MACOS_BUILD_FRAMEWORK)
+    if((IOS AND IOS_BUILD_FRAMEWORK) OR (APPLE AND MACOS_BUILD_FRAMEWORK))
         install(TARGETS ${PROJECT_NAME}
             FRAMEWORK DESTINATION lib
         )
