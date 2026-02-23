@@ -24,7 +24,7 @@ void main(List<String> args) async {
       'version',
       abbr: 'v',
       help: 'Release version tag to download artifacts from',
-      defaultsTo: 'v1.0.3',
+      defaultsTo: 'v1.0.7',
     );
 
   final results = parser.parse(args);

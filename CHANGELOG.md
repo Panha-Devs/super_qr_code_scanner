@@ -1,4 +1,8 @@
 # CHANGELOG
+## [1.0.12]
+- Add support for swift package manager on ios and macos
+- Bug fixes, small improvements
+
 ## [1.0.11]
 - Add new script for cleanup android .cxx directory
 
