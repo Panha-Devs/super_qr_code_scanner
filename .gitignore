@@ -73,6 +73,9 @@ android/opencv_sdk/
 **/macos/Flutter/Flutter-Debug.xcconfig
 **/macos/Flutter/Flutter-Release.xcconfig
 
+# Swift Package Manager for iOS and macOS
+.swiftpm
+
 # Coverage
 coverage/
 
@@ -125,6 +128,8 @@ ehthumbs.db
 
 # Your CMake temporary build folder
 build/
+dist/
+install/
 src/build/
 ios/libs/
 macos/libs/

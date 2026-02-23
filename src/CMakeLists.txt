@@ -68,6 +68,8 @@ set(OPENCV_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/opencv/libs/${PLATFORM}-${ABI})
 set(ZXING_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zxing/include)
 set(ZXING_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zxing/libs/${PLATFORM}-${ABI})
 
+option(MACOS_BUILD_FRAMEWORK "Build macOS framework for SwiftPM" OFF)
+
 # =========================
 # Include Directories
 # =========================
@@ -81,7 +83,23 @@ include_directories(
 # Create Library
 # =========================
 if(IOS OR APPLE)
-    add_library(${PROJECT_NAME} STATIC ${SOURCES})
+    if(APPLE AND MACOS_BUILD_FRAMEWORK)
+        message(STATUS "🍎 macOS Framework build ENABLED (SwiftPM mode)")
+        add_library(${PROJECT_NAME} SHARED ${SOURCES})
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            FRAMEWORK TRUE
+            FRAMEWORK_VERSION A
+            MACOSX_FRAMEWORK_IDENTIFIER com.panha.${PROJECT_NAME}
+            PUBLIC_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/super_qr_code_scanner_api.h"
+            XCODE_ATTRIBUTE_DEFINES_MODULE YES
+            XCODE_ATTRIBUTE_INSTALL_PATH "@rpath"
+            XCODE_ATTRIBUTE_SKIP_INSTALL NO
+            BUILD_WITH_INSTALL_RPATH YES
+        )
+    else()
+        message(STATUS "📦 Static library build (CocoaPods / iOS default)")
+        add_library(${PROJECT_NAME} STATIC ${SOURCES})
+    endif()
 else()
     add_library(${PROJECT_NAME} SHARED ${SOURCES})
 endif()
@@ -106,6 +124,17 @@ else()
     file(GLOB OPENCV_LIBS "${OPENCV_LIB_DIR}/libopencv_*.so")
 endif()
 
+# OpenCV 3rd-party dependencies (IMPORTANT)
+if(MACOS_BUILD_FRAMEWORK)
+    if(IOS OR APPLE)
+        file(GLOB OPENCV_3RDPARTY_LIBS
+            "${OPENCV_LIB_DIR}/liblibjpeg*.a"
+            "${OPENCV_LIB_DIR}/liblibpng*.a"
+            "${OPENCV_LIB_DIR}/libzlib*.a"
+        )
+    endif()
+endif()
+
 # Find ZXing library
 if(ANDROID)
     set(ZXING_LIB "${ZXING_LIB_DIR}/libZXing.a")
@@ -119,11 +148,22 @@ endif()
 
 message(STATUS "OpenCV libraries: ${OPENCV_LIBS}")
 message(STATUS "ZXing library: ${ZXING_LIB}")
+if(MACOS_BUILD_FRAMEWORK)
+    message(STATUS "OpenCV 3rd-party libs: ${OPENCV_3RDPARTY_LIBS}")
+endif()
 
-target_link_libraries(${PROJECT_NAME}
-    ${OPENCV_LIBS}
-    ${ZXING_LIB}
-)
+if(MACOS_BUILD_FRAMEWORK)
+    target_link_libraries(${PROJECT_NAME}
+        ${OPENCV_LIBS}
+        ${OPENCV_3RDPARTY_LIBS}
+        ${ZXING_LIB}
+    )
+else()
+    target_link_libraries(${PROJECT_NAME}
+        ${OPENCV_LIBS}
+        ${ZXING_LIB}
+    )
+endif()
 
 # =========================
 # Android Specific
@@ -139,13 +179,15 @@ endif()
 # iOS/macOS Specific
 # =========================
 if(IOS OR APPLE)
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        FRAMEWORK FALSE
-        MACOSX_RPATH TRUE
-    )
     target_link_libraries(${PROJECT_NAME}
         "-framework Foundation"
         "-framework CoreFoundation"
+        "-framework Accelerate"
+    )
+
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        MACOSX_RPATH TRUE
+        INSTALL_RPATH "@rpath"
     )
 endif()
 
@@ -195,13 +237,16 @@ if(WIN32)
     endforeach()
 endif()
 
-# =========================
-# Install (skip for Windows)
-# =========================
 if(NOT WIN32)
-    install(TARGETS ${PROJECT_NAME}
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-    )
+    if(APPLE AND MACOS_BUILD_FRAMEWORK)
+        install(TARGETS ${PROJECT_NAME}
+            FRAMEWORK DESTINATION lib
+        )
+    else()
+        install(TARGETS ${PROJECT_NAME}
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            RUNTIME DESTINATION bin
+        )
+    endif()
 endif()
