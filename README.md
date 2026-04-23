@@ -457,16 +457,6 @@ The package is completely self-contained:
 - Run `cd ios && pod install`
 - Clean Xcode build folder
 
-### Library not found error
-```dart
-// Enable logging to see detailed error messages
-QRScannerLogger.setEnabled(true);
-QRScannerLogger.setLevel(LogLevel.debug);
-```t
-4. **Adaptive threshold**: Otsu and adaptive thresholding
-5. **Inverted**: Scan inverted grayscale image
-6. **Sharpened**: Apply sharpening kernel
-
 ## Requirements
 
 ### No setup required!
